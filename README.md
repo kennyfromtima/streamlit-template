@@ -26,7 +26,7 @@ Below is a high-level description of the important contents within this repo:
 
 ## 2) Usage Instructions
 
-#### 2.1) Running the recommender system locally
+#### 2.1) Running the web app locally
 
 As a first step to becoming familiar with our web app's functioning, we recommend setting up a running instance on your own local machine.
 
@@ -70,7 +70,7 @@ Congratulations! You've now officially deployed your web-based social media data
 
 While we leave the modification of your platform up to you, the latter process of cloud deployment is outlined within the next section.  
 
-#### 2.2) Running the recommender system on a remote AWS EC2 instance
+#### 2.2) Running the web app on a remote AWS EC2 instance
 
 | We recommend deploying this app on a larger AWS instance with sufficient memory (t2.2xlarge/t2.xlarge)|
 
@@ -128,7 +128,7 @@ Where the specific `Network` and `External` URLs correspond to those assigned to
 
     Where the above public IP address corresponds to the one given to your AWS EC2 instance.
 
-    If successful, you should see the landing page of your recommender system app (image identical to that for the local setup instructions).
+    If successful, you should see the landing page of your web app (image identical to that for the local setup instructions).
 
 **[On the Host]:**
 
