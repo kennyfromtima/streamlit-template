@@ -1,8 +1,8 @@
 """
 
-    Streamlit webserver-based Recommender Engine.
+    Streamlit webserver-based Social media data Extractor
 
-    Author: Explore Data Science Academy.
+    Author: Kenechukwu Ozojie.
 
     Note:
     ---------------------------------------------------------------------
@@ -13,7 +13,7 @@
 
     Description: This file is used to launch a minimal streamlit web
 	application. You are expected to extend certain aspects of this script
-    and its dependencies as part of your predict project.
+    and its dependencies as it suits your project needs.
 
 	For further help with the Streamlit framework, see:
 

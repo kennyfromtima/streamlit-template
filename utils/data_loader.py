@@ -2,29 +2,29 @@
 
     Helper functions for data loading and manipulation.
 
-    Author: Explore Data Science Academy.
+    Author: Kenechukwu Ozojie.
 
 """
 # Data handling dependencies
 import pandas as pd
 import numpy as np
 
-def load_movie_titles(path_to_movies):
-    """Load movie titles from database records.
+def load_data(path_to_data):
+    """Load data from provided source.
 
     Parameters
     ----------
-    path_to_movies : str
-        Relative or absolute path to movie database stored
+    path_to_data : str
+        Relative or absolute path to the data stored
         in .csv format.
 
     Returns
     -------
     list[str]
-        Movie titles.
+        data.
 
     """
-    df = pd.read_csv(path_to_movies)
+    df = pd.read_csv(path_to_data)
     df = df.dropna()
-    movie_list = df['title'].to_list()
-    return movie_list
+    data = df['title'].to_list()
+    return data
