@@ -24,7 +24,11 @@
 import streamlit as st
 
 # Data handling dependencies
+import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
+import plotly.express as px
+from wordcloud import WordCloud
+import pygwalker as pyg
 import pandas as pd
 import numpy as np
 
@@ -38,33 +42,42 @@ from utils.channel_posts import fetch_videos_and_details
 # App declaration
 def main():
     # building out the pages
-    page_options = ["Data Extraction","Data Visualization","Solution Overview"]
+    page_options = ["📤 Data Extraction","📈 Data Visualization","💡 Solution Overview"]
 
     # -------------------------------------------------------------------
     # selecting the page
-    page_selection = st.sidebar.selectbox("Menu", page_options)
-    if page_selection == "Data Extraction":
+    page_selection = st.sidebar.selectbox("📑 Menu", page_options)
+    if page_selection == "📤 Data Extraction":
         # Header contents
-        st.write('# TIMA Social Data Center')
-        st.write('#### TIMA\'s portal for social media data sourcing')
-        st.image('resources/imgs/tima_logo.png',use_column_width=True)
+        st.image('resources/imgs/tima_logo.png',use_column_width=True,)
+        st.markdown("<h2 style='text-align: center; color: white;'>TIMA Social Data Center</h2>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>TIMA\'s portal for social media data sourcing 📊</h5>", unsafe_allow_html=True)
+        st.markdown('---')
 
-        # platform selection
-        plat = st.radio("###### Select a platform",('Instagram', 'Youtube'))
+        # creating columns
+        col1, col2 = st.columns(2)
 
+        with col1:
+            # platform selection
+            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube'),)
+    
         # building out the instagram selection
-        if plat == 'Instagram':
-            # data type selection
-            dat1 = st.radio("###### Select the kind of data you need",('Profile metadata', 'Posts metadata', 'Mentions metadata'))
+        if plat == '📸 Instagram':
+            with col2:
+                # data type selection
+                dat1 = st.radio("##### Select the kind of data you need",('🙎🏻‍♂️ Profile `metadata`', '💌 Posts `metadata`', '📢 Mentions `metadata`'))
+            st.markdown('---')
+
             # text input search bar
-            text = st.text_input('###### Enter the account\'s username below',placeholder="search here...", key="text_input", value='')
+            text = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
             
             # building out the profile metadata selection
-            if dat1 == 'Profile metadata':
-                if st.button("Search") or text:
+            if dat1 == '🙎🏻‍♂️ Profile `metadata`':
+                if st.button("⏬ Extract") or text:
                     try:
                         with st.spinner('Extracting the data...'):
                             df = get_profile_metadata(text)
+
                         st.write(f"###### Here is {text}'s profile metadata")
                         st.dataframe(df)
 
@@ -73,8 +86,8 @@ def main():
                                 Please cross-check your network connection and the username you entered!")
 
             # building out the posts metadata selection            
-            if dat1 == 'Posts metadata':
-                if st.button("Search") or text:
+            if dat1 == '💌 Posts `metadata`':
+                if st.button("⏬ Extract") or text:
                     try:
                         with st.spinner('Extracting the data...'):
                             df = get_post_metadata(text)
@@ -86,8 +99,8 @@ def main():
                                 Please cross-check your network connection and the username you entered!")
                         
             # building out the mentions metadata selection
-            if dat1 == 'Mentions metadata':
-                if st.button("Search") or text:
+            if dat1 == '📢 Mentions `metadata`':
+                if st.button("⏬ Extract") or text:
                     try:
                         with st.spinner('Extracting the data...'):
                             df = get_mention_metadata(text)
@@ -99,19 +112,26 @@ def main():
                                 Please cross-check your network connection and the username you entered!")
 
         # building out the youtube selection
-        if plat == 'Youtube':
-            # data type selection
-            dat2 = st.radio("###### Select the kind of data you need",('Channel metadata', 'Posts metadata'))
+        if plat == '🎦 Youtube':
+            with col2:
+                # data type selection
+                dat2 = st.radio("##### Select the kind of data you need",('📺 Channel `metadata`', '🎬 Posts `metadata`'))
+            st.markdown('---')
+
             # text input search bar
-            text = st.text_input('###### Enter the channel\'s ID below',placeholder="search here...", key="text_input", value='')
+            text = st.text_input('###### Enter the channel\'s ID below 👇',placeholder="search here...", key="text_input", value='')
             
             # building out the channel metadata selection
-            if dat2 == 'Channel metadata':
-                if st.button("Search") or text:
+            if dat2 == '📺 Channel `metadata`':
+                if st.button("⏬ Extract") or text:
                     try:
                         with st.spinner('Extracting the data...'):
                             df = fetch_and_aggregate_channel_data(text)
-                        st.write(f"###### Here is {text}'s channel metadata")
+
+                        # Access the title from the DataFrame
+                        channel_title = df['Title'].iloc[0] if not df.empty else "Channel title not found"
+
+                        st.write(f"###### Here is {channel_title}'s channel metadata")
                         st.dataframe(df)
 
                     except:
@@ -119,12 +139,13 @@ def main():
                                 Please cross-check your network connection and the username you entered!")
                         
             # building out the posts metadata selection
-            if dat2 == 'Posts metadata':
-                if st.button("Search") or text:
+            if dat2 == '🎬 Posts `metadata`':
+                if st.button("⏬ Extract") or text:
                     try:
                         with st.spinner('Extracting the data...'):
                             df = fetch_videos_and_details(text)
-                        st.write(f"###### Here is {text}'s posts metadata")
+
+                        st.write(f"###### Here is {text}'s channel metadata")
                         st.dataframe(df)
 
                     except:
@@ -133,83 +154,424 @@ def main():
 
     # -------------------------------------------------------------------
 
-    if page_selection == "Data Visualization":
+    # Function to format numbers to nearest thousand with 'K'
+    def format_number(num):
+        if num < 1000:
+            return str(num)
+        elif 1000 <= num < 1000000:
+            return f"{num/1000:.1f}K"
+        else:
+            return f"{num/1000000:.2f}M"
+
+    if page_selection == "📈 Data Visualization":
         # Header contents
-        st.write('# TIMA Social Data Center')
-        st.write('#### TIMA\'s portal for social media data sourcing')
-        st.image('resources/imgs/tima_logo.png',use_column_width=True)
+        st.image('resources/imgs/tima_logo.png',use_column_width=True,)
+        #st.markdown("<h2 style='text-align: center; color: white;'>TIMA Social Data Center</h2>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>TIMA\'s portal for social media data sourcing 📊</h5>", unsafe_allow_html=True)
+        st.markdown('---')
 
-        # platform selection
-        plat = st.radio("###### Select a platform",('Instagram', 'Youtube'))
+        col3, col4 = st.columns(2)
+        with col3:
+            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube'))
 
-        # building out the instagram selection
-        if plat == 'Instagram':
-            # text input search bar
-            text = st.text_input('###### Enter the account\'s username below',placeholder="search here...", key="text_input", value='')
-            if st.button("Search") or text:
-                try:
-                    with st.spinner('Visualizing the data...'):
-                        df = get_profile_metadata(text)
-                    st.write(f"###### Here is {text}'s profile metadata")
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Posts",df['Media Count'])
-                        st.metric("Average Likes",df['Average Likes'])
-                        st.metric("Images",df['Images'])
+        # logic control
+        if plat == '📸 Instagram':
+            with col4:
+                # platform selection
+                viz = st.radio("##### Select Visualization type",options=('🤖 Get `ready-made` visuals', '🛠️ Get `custom-made` visuals'))
+            st.markdown('---')
+
+            # building out the instagram selection
+            if viz == '🤖 Get `ready-made` visuals':
+                # text input search bar
+                text = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
+                if st.button("⏩ Visualize") or text:
+                    try:
+                        with st.spinner('Visualizing the data...'):
+                            # Fetch the data
+                            df = get_profile_metadata(text)
+
+                        # Display Profile Picture prominently
+                        #st.image(df['Profile Pic'].iloc[0], width=200, caption=f"{text}'s Profile Picture", use_column_width=False)
+
+                        # Adjusted layout for profile metrics
+                        col5, col6, col7, col8 = st.columns([3, 1, 1, 1])
+                        
+                        with col5:
+                            st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Username:</b> {df['User Name'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Full Name:</b> {df['Full Name'].iloc[0] if df['Full Name'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Biography:</b> {df['Biography'].iloc[0][:300] + '...' if len(df['Biography'].iloc[0]) > 300 else df['Biography'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Profile URL:</b> <a href='{df['Profile URL'].iloc[0]}' target='_blank'>{df['Profile URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+
+                        with col6:
+                            formatted_followers = format_number(df['Followers'].iloc[0])
+                            st.metric("Followers", formatted_followers)
+                            formatted_following = format_number(df['Following'].iloc[0])
+                            st.metric("Following", formatted_following)
+                        
+                        with col7:
+                            formatted_posts = format_number(df['Media Count'].iloc[0])
+                            st.metric("Total Posts", formatted_posts)
+                            
+
+                        #with col7:
+                            #st.metric("Total Posts", df['Media Count'].iloc[0])
+                            #st.metric("Videos", df['Videos'].iloc[0])
+
+                        #with col8:
+                            #st.metric("Images", df['Images'].iloc[0])
+
+                        # Metrics and pie chart in a new row
+                        col9, col10, col11, col12, col_space, col13 = st.columns([4, 4, 4, 4, 1, 4])
+
+                        metrics_style = "<style>.metrics {font-size:14px; font-weight:bold; color:black;} .submetrics {font-size:18px; font-weight:bold; color:grey;}</style>"
+
+                        with col9:
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{df['Total Likes'].iloc[0]}<br>Average: {df['Average Likes'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                        with col10:
+                            st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate</div><div class='submetrics'>{df['Engagement Rate'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                        with col11:
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{df['Total Comments'].iloc[0]}<br>Average: {df['Average Comments'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                        with col12:
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{df['Total Views'].iloc[0]}<br>Average: {df['Average Views'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                        # Optional: If you have a specific metric for 'Number of Views', include it here
+
+                        # Pie chart for videos vs photos
+                        with col13:
+                            labels = ['Videos', 'Images']
+                            values = [df['Videos'].iloc[0], df['Images'].iloc[0]]
+                            fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
+                            fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
+                            fig.update_layout(width=300, height=400)  # Adjust the size as needed
+                            st.plotly_chart(fig)
+
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+                    except:
+                        st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+
+
+
+                    try:
+                        with st.spinner('Visualizing more data...'):
+                            # Fetch the data
+                            df_posts = get_post_metadata(text)
+                        
+                        # Normalize the 'Hashtags' column to ensure each row contains a list
+                        df_posts['Hashtags'] = df_posts['Hashtags'].apply(lambda x: x if isinstance(x, list) else [x] if isinstance(x, str) else [])
+                        
+                        # Concatenate all hashtags into a single list
+                        all_hashtags_list = sum(df_posts['Hashtags'].tolist(), [])
+                        
+                        # Join all hashtags in the list into a single string separated by spaces
+                        all_hashtags_string = ' '.join(all_hashtags_list)
+                        
+                        # Layout for table 
+                        #col_table, col_space = st.columns([8, 1])
+
+                        #with col_table:
+                        st.write("### Trending Posts")
+                        df_filtered = df_posts[['Date', 'Post Type', 'Likes', 'Comments', 'Video Views', 'Post URL']]
+                        st.dataframe(df_filtered, height=400)
+
+                        # Generate the Word Cloud with adjusted parameters
+                        wordcloud = WordCloud(
+                            background_color='white',
+                            max_words=200,
+                            min_word_length=4,
+                            width=2000,
+                            height=1000
+                        ).generate(all_hashtags_string)
+
+
+                        # Layout Word Cloud visual
+                        #col_visual, col_space = st.columns([8, 1])
+                        
+                        #with col_visual:
+                        st.write("### Trending Hashtags")
+                        fig, ax = plt.subplots()
+                        ax.imshow(wordcloud, interpolation='bilinear')
+                        ax.axis('off')
+                        st.pyplot(fig)
+
+                        # Ensure 'Date' is a datetime object and extract the year
+                        df_posts['Date'] = pd.to_datetime(df_posts['Date'])
+                        df_posts['Year'] = df_posts['Date'].dt.year
+
+                        # Filter the DataFrame to include only the past 5 years
+                        current_year = pd.to_datetime('today').year
+                        df_filtered = df_posts[df_posts['Year'] >= current_year - 5]
+
+                        # Aggregate likes, comments, and views by year
+                        aggregated_data = df_filtered.groupby('Year').agg({
+                            'Likes': 'sum',
+                            'Comments': 'sum',
+                            'Video Views': 'sum'
+                        }).reset_index()
+                        
+                        # Generate and display interactive bar charts
+                        # Likes History
+                        fig_likes = px.bar(aggregated_data, x='Year', y='Likes', title='Likes History Over the Past 5 Years', 
+                                        text='Likes', color_discrete_sequence=["#636EFA"])
+                        fig_likes.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Likes")
+                        fig_likes.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                        
+                        # Comments History
+                        fig_comments = px.bar(aggregated_data, x='Year', y='Comments', title='Comments History Over the Past 5 Years', 
+                                            text='Comments', color_discrete_sequence=["#EF553B"])
+                        fig_comments.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Comments")
+                        fig_comments.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                        
+                        # Views History
+                        fig_views = px.bar(aggregated_data, x='Year', y='Video Views', title='Views History Over the Past 5 Years', 
+                                        text='Video Views', color_discrete_sequence=["#00CC96"])
+                        fig_views.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Video Views")
+                        fig_views.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                        
+                        # Display the bar charts
+                        st.plotly_chart(fig_likes, use_container_width=True)
+                        st.plotly_chart(fig_comments, use_container_width=True)
+                        st.plotly_chart(fig_views, use_container_width=True)
                     
-                    with col2:
-                        st.metric("Followers",df['Followers'])
-                        st.metric("Average Comments",df['Average Comments'])
-                        #st.metric("Engagement Rate",df['Engagement Rate'])
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+
                     
-                    with col3:
-                        st.metric("Following",df['Following'])
-                        st.metric("Average Views",df['Average Views'])
-                        st.metric("Videos",df['Videos'])
-                    #col1.metric("Posts",df['Media Count'])
-                    #col2.metric("Followers",df['Followers'])
-                    #col3.metric("Following",df['Following'])
-                    #plt.pie(df['Images'])
-                except:
-                    st.error("Oops! Looks like this account does't exist, or there is a network error.\
-                                Please cross-check your network connection and the username you entered!")
-        
-        # building out the youtube selection
-        if plat == 'Youtube':
-            # text input search bar
-            text = st.text_input('###### Enter the channels\'s ID below',placeholder="search here...", key="text_input", value='')
-            if st.button("Search") or text:
-                try:
-                    with st.spinner('Visualizing the data...'):
-                        df = fetch_and_aggregate_channel_data(text)
-                    st.write(f"###### Here is {text}'s profile metadata")
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Posts",df['Total Videos'])
-                        st.metric("Average Likes",df['Average Likes per Video'])
-                        #st.metric("Images",df['Images'])
+                    try:
+                        with st.spinner('Visualizing more data...'):
+                            # Fetch the data
+                            df_mentions = get_mention_metadata(text)
                     
-                    with col2:
-                        st.metric("Subscribers",df['Subscriber Count'])
-                        st.metric("Average Comments",df['Average Comments per Video'])
-                        #st.metric("Engagement Rate",df['Engagement Rate (%)'])
+                        # Displaying a message to indicate data fetching is done
+                        #st.success('Data fetched successfully!')
+                        
+                        # Renaming and selecting specific columns for the display as per requirements
+                        df_display = df_mentions[['Date', 'User Id', 'Post Type', 'Likes', 'Comments', 'Post URL']]
+                        
+                        # Setting the column names as needed
+                        df_display.columns = ['Date', 'User ID', 'Post Type', 'Likes', 'Comments', 'URL']
+                        
+                        # Display the table as scrollable, adjusting height to show about 10 rows
+                        st.write("### Trending Mentions")
+                        st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
                     
-                    with col3:
-                        st.metric("Engagement Rate",df['Engagement Rate (%)'])
-                        st.metric("Average Views",df['Average Views per Video'])
-                        #st.metric("Videos",df['Videos'])
-                    #col1.metric("Posts",df['Media Count'])
-                    #col2.metric("Followers",df['Followers'])
-                    #col3.metric("Following",df['Following'])
-                    #plt.pie(df['Images'])
-                except:
-                    st.error("Oops! Looks like this account does't exist, or there is a network error.\
-                                Please cross-check your network connection and the username you entered!")           
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+            
+            # building out the youtube selection
+            if viz == '🛠️ Get `custom-made` visuals':
+                # text input search bar
+                text2 = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
+                if st.button("⏩ Visualize") or text2:
+                    try:
+                        with st.spinner('Visualizing the data...'):
+                            df = get_profile_metadata(text2)
+
+                        # Generate the HTML using Pygwalker
+                        pyg_html = pyg.to_html(df)
+
+                        # Embed the HTML into the Streamlit app
+                        st.write(f"###### Here is {text2}'s profile metadata")
+                        components.html(pyg_html, height=1000, width=1000, scrolling=True)
+
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+                    except:
+                        st.error("Oops! Looks like this account does't exist, or there is a network error.\
+                                    Please cross-check your network connection and the username you entered!")           
+
+
+                    try:
+                        with st.spinner('Visualizing more data...'):
+                            df2 = get_post_metadata(text2)
+
+                        # Generate the HTML using Pygwalker
+                        pyg_html2 = pyg.to_html(df2)
     
+                        # Embed the HTML into the Streamlit app
+                        st.write(f"###### Here is {text2}'s posts metadata")
+                        components.html(pyg_html2, height=1000, width=1000, scrolling=True)
+                    
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+
+
+                    try:
+                        with st.spinner('Visualizing more data...'):
+                            df3 = get_mention_metadata(text2)
+
+                        # Generate the HTML using Pygwalker
+                        pyg_html3 = pyg.to_html(df3)
+    
+                        # Embed the HTML into the Streamlit app
+                        st.write(f"###### Here is {text2}'s mentions metadata")
+                        components.html(pyg_html3, height=1000, width=1000, scrolling=True)
+                    
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+
+
+        if plat == '🎦 Youtube':
+            with col4:
+                # platform selection
+                viz = st.radio("##### Select Visualization type",options=('🤖 Get `ready-made` visuals', '🛠️ Get `custom-made` visuals'))
+            st.markdown('---')
+
+            # building out the instagram selection
+            if viz == '🤖 Get `ready-made` visuals':
+                # text input search bar
+                text = st.text_input('###### Enter the channels\'s ID below 👇',placeholder="search here...", key="text_input", value='')
+                if st.button("⏩ Visualize") or text:
+                    try:
+                        with st.spinner('Visualizing the data...'):
+                            df = fetch_and_aggregate_channel_data(text)
+
+                        # Access the title from the DataFrame
+                        channel_title = df['Title'].iloc[0] if not df.empty else "Channel title not found"
+                        
+                        # Use the channel title in the output
+                        st.write(f"Here is {channel_title}'s profile metadata", unsafe_allow_html=True)
+                        
+                        col1, col2, col3 = st.columns(3)
+
+                        # Adjusted layout for profile metrics
+                        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                        
+                        with col1:
+                            st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Username:</b> {df['Title'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>About:</b> {df['Description'].iloc[0] if df['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Channel URL:</b> <a href='{df['Channel URL'].iloc[0]}' target='_blank'>{df['Channel URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+
+                        with col2:
+                            formatted_followers = format_number(df['Subscriber Count'].iloc[0])
+                            st.metric("Subscribers", formatted_followers)
+                            
+                        
+                        with col3:
+                            formatted_posts = format_number(df['Total Videos'].iloc[0])
+                            st.metric("Total Videos", formatted_posts)
+
+                        
+                        col5, col6, col7, col8, col_space, col9 = st.columns([4, 4, 4, 4, 1, 4])
+
+                        metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:white;}</style>"
+
+                        with col5:
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{df['Total Likes'].iloc[0]}<br>Average: {df['Average Likes per Video'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                        with col6:
+                            st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate %</div><div class='submetrics'>{df['Engagement Rate (%)'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                        with col7:
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{df['Total Comments'].iloc[0]}<br>Average: {df['Average Comments per Video'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                        with col8:
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{df['Total Views'].iloc[0]}<br>Average: {df['Average Views per Video'].iloc[0]}</div>", unsafe_allow_html=True)
+
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+                    
+                    except:
+                        st.error("Oops! Looks like this account does't exist, or there is a network error.\
+                                    Please cross-check your network connection and the username you entered!")
+                    
+                    
+                    try:
+                        with st.spinner('Visualizing more data...'):
+                            df = fetch_videos_and_details(text) 
+                        # Ensure 'Date' is a datetime object and extract the year
+                        df['Date Posted'] = pd.to_datetime(df['Date Posted'])
+                        df['Year'] = df['Date Posted'].dt.year
+
+                        # Filter the DataFrame to include only the past 5 years
+                        current_year = pd.to_datetime('today').year
+                        df_filtered = df[df['Year'] >= current_year - 5]
+
+                        # Aggregate likes, comments, and views by year
+                        aggregated_data = df_filtered.groupby('Year').agg({
+                            'Likes': 'sum',
+                            'Comments': 'sum',
+                            'Views': 'sum'
+                        }).reset_index()
+                    
+                        # Plotting the bar charts
+                        fig_likes = px.bar(aggregated_data, x='Year', y='Likes', title='Likes History Over the Past 5 Years',
+                                            color_discrete_sequence=["#636EFA"])
+                        fig_comments = px.bar(aggregated_data, x='Year', y='Comments', title='Comments History Over the Past 5 Years',
+                                                color_discrete_sequence=["#EF553B"])
+                        fig_views = px.bar(aggregated_data, x='Year', y='Views', title='Views History Over the Past 5 Years',
+                                            color_discrete_sequence=["#00CC96"])
+
+                        st.plotly_chart(fig_likes, use_container_width=True)
+                        st.plotly_chart(fig_comments, use_container_width=True)
+                        st.plotly_chart(fig_views, use_container_width=True)
+
+
+                
+                        #Setting up a Table for posts
+                        
+                        # Renaming and selecting specific columns for the display as per requirements
+                        df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
+                        
+                        # Setting the column names as needed
+                        df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'URL']
+                        
+                        # Display the table as scrollable, adjusting height to show about 10 rows
+                        st.write("### Channel Posts")
+                        st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
+                    
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+            
+            # building out the youtube selection
+            if viz == '🛠️ Get `custom-made` visuals':
+                # text input search bar
+                text2 = st.text_input('###### Enter the channels\'s ID below 👇',placeholder="search here...", key="text_input", value='')
+                if st.button("⏩ Visualize") or text2:
+                    try:
+                        with st.spinner('Visualizing the data...'):
+                            df = fetch_and_aggregate_channel_data(text2)
+                        
+                        # Access the title from the DataFrame
+                        channel_title = df['Title'].iloc[0] if not df.empty else "Channel title not found"
+
+                        # Generate the HTML using Pygwalker
+                        pyg_html = pyg.to_html(df)
+    
+                        # Embed the HTML into the Streamlit app
+                        st.write(f"###### Here is {channel_title}'s profile metadata", unsafe_allow_html=True)
+                        components.html(pyg_html, height=1000, width=1000, scrolling=True)
+
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+                    except:
+                        st.error("Oops! Looks like this account does't exist, or there is a network error.\
+                                    Please cross-check your network connection and the username you entered!")
+                    
+                    
+                    try:
+                        with st.spinner('Visualizing more data...'):
+                            df2 = fetch_videos_and_details(text2)
+
+                        # Generate the HTML using Pygwalker
+                        pyg_html2 = pyg.to_html(df2)
+    
+                        # Embed the HTML into the Streamlit app
+                        st.write(f"###### Here is {text2}'s posts metadata")
+                        components.html(pyg_html2, height=1000, width=1000, scrolling=True)
+
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}") 
     # -------------------------------------------------------------------
 
     # ------------- SAFE FOR ALTERING/EXTENSION -------------------------
-    if page_selection == "Solution Overview":
+    if page_selection == "💡 Solution Overview":
         st.title("Solution Overview")
         st.write("Describe the process of this app on this page")
 
