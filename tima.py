@@ -119,20 +119,20 @@ def main():
             st.markdown('---')
 
             # text input search bar
-            text = st.text_input('###### Enter the channel\'s ID below 👇',placeholder="search here...", key="text_input", value='')
+            text = st.text_input('###### Enter the channel\'s username below 👇',placeholder="search here...", key="text_input", value='')
             
             # building out the channel metadata selection
             if dat2 == '📺 Channel `metadata`':
                 if st.button("⏬ Extract") or text:
                     try:
                         with st.spinner('Extracting the data...'):
-                            df = fetch_and_aggregate_channel_data(text)
-
-                        # Access the title from the DataFrame
-                        channel_title = df['Title'].iloc[0] if not df.empty else "Channel title not found"
-
-                        st.write(f"###### Here is {channel_title}'s channel metadata")
-                        st.dataframe(df)
+                            df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text)
+                        if error_message:
+                            st.write(error_message)
+                        else:
+                            st.write(f"###### Here is {text}'s channel metadata")
+                            st.image(profile_pic_url, caption='@'+text)
+                            st.dataframe(df)
 
                     except:
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
@@ -145,7 +145,7 @@ def main():
                         with st.spinner('Extracting the data...'):
                             df = fetch_videos_and_details(text)
 
-                        st.write(f"###### Here is {text}'s channel metadata")
+                        st.write(f"###### Here is {text}'s posts metadata")
                         st.dataframe(df)
 
                     except:
@@ -225,7 +225,7 @@ def main():
                         # Metrics and pie chart in a new row
                         col9, col10, col11, col12, col_space, col13 = st.columns([4, 4, 4, 4, 1, 4])
 
-                        metrics_style = "<style>.metrics {font-size:14px; font-weight:bold; color:black;} .submetrics {font-size:18px; font-weight:bold; color:grey;}</style>"
+                        metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
 
                         with col9:
                             st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{df['Total Likes'].iloc[0]}<br>Average: {df['Average Likes'].iloc[0]}</div>", unsafe_allow_html=True)
@@ -363,7 +363,7 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
             
-            # building out the youtube selection
+            # building out the instagram selection
             if viz == '🛠️ Get `custom-made` visuals':
                 # text input search bar
                 text2 = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
@@ -422,20 +422,19 @@ def main():
                 viz = st.radio("##### Select Visualization type",options=('🤖 Get `ready-made` visuals', '🛠️ Get `custom-made` visuals'))
             st.markdown('---')
 
-            # building out the instagram selection
+            # building out the youtube selection
             if viz == '🤖 Get `ready-made` visuals':
                 # text input search bar
-                text = st.text_input('###### Enter the channels\'s ID below 👇',placeholder="search here...", key="text_input", value='')
+                text = st.text_input('###### Enter the channels\'s username below 👇',placeholder="search here...", key="text_input", value='')
                 if st.button("⏩ Visualize") or text:
                     try:
                         with st.spinner('Visualizing the data...'):
-                            df = fetch_and_aggregate_channel_data(text)
+                            df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text)
+                        if error_message:
+                            st.write(error_message)
 
-                        # Access the title from the DataFrame
-                        channel_title = df['Title'].iloc[0] if not df.empty else "Channel title not found"
-                        
-                        # Use the channel title in the output
-                        st.write(f"Here is {channel_title}'s profile metadata", unsafe_allow_html=True)
+                        # Use the username in the output
+                        st.write(f"Here is {text}'s profile metadata", unsafe_allow_html=True)
                         
                         col1, col2, col3 = st.columns(3)
 
@@ -443,6 +442,7 @@ def main():
                         col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                         
                         with col1:
+                            st.image(profile_pic_url, caption='@'+text)
                             st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>Username:</b> {df['Title'].iloc[0]}</div>", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>About:</b> {df['Description'].iloc[0] if df['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
@@ -460,7 +460,7 @@ def main():
                         
                         col5, col6, col7, col8, col_space, col9 = st.columns([4, 4, 4, 4, 1, 4])
 
-                        metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:white;}</style>"
+                        metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
 
                         with col5:
                             st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{df['Total Likes'].iloc[0]}<br>Average: {df['Average Likes per Video'].iloc[0]}</div>", unsafe_allow_html=True)
@@ -532,20 +532,20 @@ def main():
             # building out the youtube selection
             if viz == '🛠️ Get `custom-made` visuals':
                 # text input search bar
-                text2 = st.text_input('###### Enter the channels\'s ID below 👇',placeholder="search here...", key="text_input", value='')
+                text2 = st.text_input('###### Enter the channels\'s username below 👇',placeholder="search here...", key="text_input", value='')
                 if st.button("⏩ Visualize") or text2:
                     try:
                         with st.spinner('Visualizing the data...'):
-                            df = fetch_and_aggregate_channel_data(text2)
-                        
-                        # Access the title from the DataFrame
-                        channel_title = df['Title'].iloc[0] if not df.empty else "Channel title not found"
+                            df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text2)
+                        if error_message:
+                            st.write(error_message)
 
                         # Generate the HTML using Pygwalker
                         pyg_html = pyg.to_html(df)
     
                         # Embed the HTML into the Streamlit app
-                        st.write(f"###### Here is {channel_title}'s profile metadata", unsafe_allow_html=True)
+                        st.write(f"###### Here is {text2}'s profile metadata", unsafe_allow_html=True)
+                        st.image(profile_pic_url, caption='@'+text2)
                         components.html(pyg_html, height=1000, width=1000, scrolling=True)
 
                     except Exception as e:

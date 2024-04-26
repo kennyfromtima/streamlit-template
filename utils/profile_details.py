@@ -82,5 +82,6 @@ def get_profile_metadata(username):
                      'Engagement Rate', 'Videos', 'Images', 'Private', 'Verified',
                      'Media Count', 'Profile Pic','Profile URL']
     df = pd.DataFrame(data=data, columns= column_list)
+    #profile_pic = profile.profile_pic_url
 
     return df

@@ -10,17 +10,38 @@
 from googleapiclient.discovery import build
 import pandas as pd
 
-# API key (replace with yours) and channel ID
+# API key (replace with yours)
 api_key = 'AIzaSyBGf2wn9gHL6TyOTc7sUyABsWHLkDpqPHM'
 youtube = build('youtube', 'v3', developerKey=api_key)
 
-def fetch_videos_and_details(channel_id, max_videos=1000):
+def search_channel_by_name(channel_name):
+    # Use the YouTube API search endpoint to locate the channel by a given name or identifier
+    search_response = youtube.search().list(
+        q=channel_name,
+        part='snippet',
+        type='channel',
+        maxResults=1
+    ).execute()
+    
+    if search_response['items']:
+        channel_id = search_response['items'][0]['id']['channelId']
+        return channel_id
+    else:
+        return None
+
+def fetch_videos_and_details(username, max_videos=1000):
+    # Search channel ID by name
+    channel_id = search_channel_by_name(username)
+    if not channel_id:
+        return None, "Channel not found for the given name.", None
+
     # Fetch uploads playlist ID
     channel_response = youtube.channels().list(
         part='contentDetails',
         id=channel_id
     ).execute()
     playlist_id = channel_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+    #profile_picture_url = channel_response['items'][0]['snippet']['thumbnails']['default']['url']
     
     # Initialize list for video IDs and counter
     video_ids = []
