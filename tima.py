@@ -463,16 +463,23 @@ def main():
                         metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
 
                         with col5:
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{df['Total Likes'].iloc[0]}<br>Average: {df['Average Likes per Video'].iloc[0]}</div>", unsafe_allow_html=True)
+                            total_likes = "{:,}".format(df['Total Likes'].iloc[0])
+                            avg_likes = "{:,}".format(df['Average Likes per Video'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
 
                         with col6:
-                            st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate %</div><div class='submetrics'>{df['Engagement Rate (%)'].iloc[0]}</div>", unsafe_allow_html=True)
+                            engagement_rate = "{:.2f}".format(df['Engagement Rate (%)'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate %</div><div class='submetrics'>{engagement_rate}</div>", unsafe_allow_html=True)
 
                         with col7:
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{df['Total Comments'].iloc[0]}<br>Average: {df['Average Comments per Video'].iloc[0]}</div>", unsafe_allow_html=True)
+                            total_comments = "{:,}".format(df['Total Comments'].iloc[0])
+                            avg_comments = "{:,}".format(df['Average Comments per Video'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
 
                         with col8:
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{df['Total Views'].iloc[0]}<br>Average: {df['Average Views per Video'].iloc[0]}</div>", unsafe_allow_html=True)
+                            total_views = "{:,}".format(df['Total Views'].iloc[0])
+                            avg_views = "{:,}".format(df['Average Views per Video'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
