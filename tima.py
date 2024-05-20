@@ -446,6 +446,7 @@ def main():
                             st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>Username:</b> {df['Title'].iloc[0]}</div>", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>About:</b> {df['Description'].iloc[0] if df['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                             st.markdown(f"<div class='font'><b>Country:</b> {df['Country'].iloc[0] if df['Country'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>Channel URL:</b> <a href='{df['Channel URL'].iloc[0]}' target='_blank'>{df['Channel URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
 
                         with col2:
