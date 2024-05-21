@@ -38,6 +38,8 @@ from utils.profile_posts import get_post_metadata
 from utils.profile_mentions import get_mention_metadata
 from utils.channel_details import fetch_and_aggregate_channel_data
 from utils.channel_posts import fetch_videos_and_details
+from utils.artist_details import get_artist_data
+from utils.podcast_details import get_podcast_data
 
 # App declaration
 def main():
@@ -59,7 +61,7 @@ def main():
 
         with col1:
             # platform selection
-            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube'),)
+            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube', '🎧 Spotify'),)
     
         # building out the instagram selection
         if plat == '📸 Instagram':
@@ -152,6 +154,57 @@ def main():
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                 Please cross-check your network connection and the username you entered!")
 
+        # building out the spotify selection
+        if plat == '🎧 Spotify':
+            with col2:
+                # data type selection
+                dat2 = st.radio("##### Select the kind of data you need",('👨‍🎤 Artist `metadata`', '🎙️ Podcast `metadata`'))
+            st.markdown('---')
+
+            # text input search bar
+            text = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
+            
+            # building out the channel metadata selection
+            if dat2 == '👨‍🎤 Artist `metadata`':
+                if st.button("⏬ Extract") or text:
+                    try:
+                        with st.spinner('Extracting the data...'):
+                            result = get_artist_data(text)
+                        if result:
+                            artist_df, top_tracks_df = result
+                            if not artist_df.empty:
+                                st.write(f"###### Here is {text}'s profile metadata")
+                                st.dataframe(artist_df)
+                            if not top_tracks_df.empty:
+                                st.write(f"###### Here are {text}'s top songs")
+                                st.dataframe(top_tracks_df)
+                        else:
+                            print("Failed to retrieve data.")
+
+                    except:
+                        st.error("Oops! Looks like this account does't exist, or there is a network error.\
+                                Please cross-check your network connection and the username you entered!")
+                        
+            # building out the posts metadata selection
+            if dat2 == '🎙️ Podcast `metadata`':
+                if st.button("⏬ Extract") or text:
+                    try:
+                        with st.spinner('Extracting the data...'):
+                            result = get_podcast_data(text)
+                        if result:
+                            podcast_df, episodes_df = result
+                            if not podcast_df.empty:
+                                st.write(f"###### Here is {text}'s profile metadata")
+                                st.dataframe(podcast_df)
+                            if not episodes_df.empty:
+                                st.write(f"###### Here are {text}'s recent episodes")
+                                st.dataframe(episodes_df)
+                        else:
+                            print("Failed to retrieve data.")
+
+                    except:
+                        st.error("Oops! Looks like this account does't exist, or there is a network error.\
+                                Please cross-check your network connection and the username you entered!")
     # -------------------------------------------------------------------
 
     # Function to format numbers to nearest thousand with 'K'
@@ -446,7 +499,7 @@ def main():
                             st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>Username:</b> {df['Title'].iloc[0]}</div>", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>About:</b> {df['Description'].iloc[0] if df['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
-                             st.markdown(f"<div class='font'><b>Country:</b> {df['Country'].iloc[0] if df['Country'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Country:</b> {df['Country'].iloc[0] if df['Country'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
                             st.markdown(f"<div class='font'><b>Channel URL:</b> <a href='{df['Channel URL'].iloc[0]}' target='_blank'>{df['Channel URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
 
                         with col2:
