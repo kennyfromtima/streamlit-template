@@ -44,7 +44,7 @@ from utils.podcast_details import get_podcast_data
 # App declaration
 def main():
     # building out the pages
-    page_options = ["📤 Data Extraction","📈 Data Visualization","💡 Solution Overview"]
+    page_options = ["📤 Data Extraction","📈 Data Visualization","⚔️ Competitors' Insight","💡 Solution Overview"]
 
     # -------------------------------------------------------------------
     # selecting the page
@@ -630,6 +630,130 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}") 
     # -------------------------------------------------------------------
+
+    if page_selection == "⚔️ Competitors' Insight":
+        # Header contents
+        st.image('resources/imgs/tima_logo.png',use_column_width=True,)
+        #st.markdown("<h2 style='text-align: center; color: white;'>TIMA Social Data Center</h2>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>TIMA\'s portal for social media data sourcing 📊</h5>", unsafe_allow_html=True)
+        st.markdown('---')
+        st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>*Get real-time metrics on similar brands/accounts at once! 🚀</h5>", unsafe_allow_html=True)
+        st.write('')
+
+        # creating columns
+        col1, col2 = st.columns(2)
+
+        with col1:
+            # platform selection
+            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube', '🎧 Spotify'),)
+    
+        # building out the instagram selection
+        if plat == '📸 Instagram':
+            with col2:
+                # data type selection
+                dat1 = st.radio("##### Select Comparison type",('📄 Basic', '📚 Advanced'))
+            st.markdown('---')
+            
+            # building out the basic selection
+            if dat1 == '📄 Basic':
+                # text area input for multiple usernames
+                usernames = st.text_area('###### Enter the accounts\' usernames below 👇', placeholder="Enter usernames separated by commas...", key="text_area", value='')
+
+                # Split usernames by comma and strip any extra whitespace
+                usernames_list = [username.strip() for username in usernames.split(",") if username.strip()]
+                # Extract data for each username
+                if st.button("⏬ Extract") or usernames_list:
+                    for username in usernames_list:
+                        try:
+                            with st.spinner(f'Extracting data for {username}...'):
+                                df = get_profile_metadata(username)
+                            st.write(f"###### Here is {username}'s {dat1.split(' ')[0].lower()} metadata")
+                            st.dataframe(df)
+
+                        except Exception as e:
+                            st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
+
+        # building out the youtube selection
+        if plat == '🎦 Youtube':
+            with col2:
+                # data type selection
+                dat2 = st.radio("##### Select Comparison type",('📄 Basic', '📚 Advanced'))
+            st.markdown('---')
+            
+            # building out the basic selection
+            if dat2 == '📄 Basic':
+                # text area input for multiple usernames
+                usernames = st.text_area('###### Enter the Channels\' usernames below 👇', placeholder="Enter usernames separated by commas...", key="text_area", value='')
+
+                # Split usernames by comma and strip any extra whitespace
+                usernames_list = [username.strip() for username in usernames.split(",") if username.strip()]
+                # Extract data for each username
+                if st.button("⏬ Extract") or usernames_list:
+                    for username in usernames_list:
+                        try:
+                            with st.spinner(f'Extracting data for {username}...'):
+                                df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(username)
+                            st.write(f"###### Here is {username}'s {dat2.split(' ')[0].lower()} metadata")
+                            st.image(profile_pic_url, caption='@' + username)
+                            st.dataframe(df)
+
+                        except Exception as e:
+                            st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
+
+        # building out the spotify selection
+        if plat == '🎧 Spotify':
+            with col2:
+                # data type selection
+                dat2 = st.radio("##### Select the kind of data you need", ('👨‍🎤 Artist `metadata`', '🎙️ Podcast `metadata`'))
+            st.markdown('---')
+            
+            # building out the Artist selection
+            if dat2 == '👨‍🎤 Artist `metadata`':
+                # text area input for multiple usernames
+                usernames = st.text_area('###### Enter the accounts\' usernames below 👇', placeholder="Enter usernames separated by commas...", key="text_area", value='')
+
+                # Split usernames by comma and strip any extra whitespace
+                usernames_list = [username.strip() for username in usernames.split(",") if username.strip()]
+
+                # Extract data for each username
+                if st.button("⏬ Extract", key="spotify_extract_button") or usernames_list:
+                    for username in usernames_list:
+                        try:
+                            with st.spinner(f'Extracting data for {username}...'):
+                                result = get_artist_data(username)
+                                if result:
+                                    artist_df, top_tracks_df = result
+                                    if not artist_df.empty:
+                                        st.write(f"###### Here is {username}'s {dat2.split(' ')[0].lower()} metadata")
+                                        st.dataframe(artist_df)
+                                    else:
+                                        st.write(f"No top tracks data available for {username}")
+                        except Exception as e:
+                            st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
+
+            # building out the podcast selection
+            if dat2 == '🎙️ Podcast `metadata`':
+                # text area input for multiple usernames
+                usernames = st.text_area('###### Enter the accounts\' usernames below 👇', placeholder="Enter usernames separated by commas...", key="text_area", value='')
+
+                # Split usernames by comma and strip any extra whitespace
+                usernames_list = [username.strip() for username in usernames.split(",") if username.strip()]
+
+                # Extract data for each username
+                if st.button("⏬ Extract", key="spotify_extract_button") or usernames_list:
+                    for username in usernames_list:
+                        try:
+                            with st.spinner(f'Extracting data for {username}...'):
+                                result = get_podcast_data(username)
+                                if result:
+                                    podcast_df, episodes_df = result
+                                    if not podcast_df.empty:
+                                        st.write(f"###### Here is {username}'s {dat2.split(' ')[0].lower()} metadata")
+                                        st.dataframe(podcast_df)
+                                    else:
+                                        st.write(f"No top tracks data available for {username}")
+                        except Exception as e:
+                            st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
 
     # ------------- SAFE FOR ALTERING/EXTENSION -------------------------
     if page_selection == "💡 Solution Overview":
