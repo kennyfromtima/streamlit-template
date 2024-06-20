@@ -34,7 +34,7 @@ def fetch_artist_details(artist_name, access_token):
     
     if not search_response.get('artists', {}).get('items'):
         print("No artist found with the name:", artist_name)
-        return pd.DataFrame(), None  # Return an empty DataFrame and None for artist_id
+        return pd.DataFrame(), None, None  # Return an empty DataFrame, None for artist_id, and None for image_url
     
     artist = search_response['artists']['items'][0]
     artist_id = artist['id']
@@ -42,15 +42,18 @@ def fetch_artist_details(artist_name, access_token):
     artist_details_endpoint = f"https://api.spotify.com/v1/artists/{artist_id}"
     artist_response = requests.get(artist_details_endpoint, headers=headers).json()
 
+    image_url = artist.get('images', [{}])[0].get('url', 'N/A')
+
     artist_data = {
         'Artist Name': artist.get('name', 'N/A'),
         'Followers': artist_response.get('followers', {}).get('total', 0),
         'Popularity': artist_response.get('popularity', 0),
         'Genres': ', '.join(artist_response.get('genres', [])),
-        'Profile Link': artist.get('external_urls', {}).get('spotify', 'N/A')
+        'Profile Link': artist.get('external_urls', {}).get('spotify', 'N/A'),
+        'Image URL': image_url  # Adding the image URL to the data
     }
     
-    return pd.DataFrame([artist_data]), artist_id
+    return pd.DataFrame([artist_data]), artist_id, image_url
 
 def fetch_artist_top_tracks(artist_id, access_token):
     """Fetch top tracks of an artist from Spotify and include popularity data."""
@@ -70,7 +73,9 @@ def fetch_artist_top_tracks(artist_id, access_token):
         'Track Name': track['name'],
         'Popularity': track['popularity'],
         'Album Name': track['album']['name'],
-        'Release Date': track['album']['release_date']
+        'Release Date': track['album']['release_date'],
+        'Preview URL': track['preview_url'],
+        'Track URL': track['external_urls']
     } for track in response['tracks']]
 
     return pd.DataFrame(top_tracks)
@@ -79,9 +84,9 @@ def get_artist_data(artist_name):
     """Main function to retrieve and display artist data and top tracks."""
     access_token = get_access_token()
     if not access_token:
-        return
+        return None
 
-    artist_df, artist_id = fetch_artist_details(artist_name, access_token)
+    artist_df, artist_id, image_url = fetch_artist_details(artist_name, access_token)
     if artist_df.empty:
         print("No data available for the artist.")
         return
@@ -90,4 +95,4 @@ def get_artist_data(artist_name):
     if top_tracks_df.empty:
         print("No top tracks data available.")
 
-    return artist_df, top_tracks_df
+    return artist_df, top_tracks_df, image_url

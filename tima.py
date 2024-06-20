@@ -171,9 +171,11 @@ def main():
                         with st.spinner('Extracting the data...'):
                             result = get_artist_data(text)
                         if result:
-                            artist_df, top_tracks_df = result
+                            artist_df, top_tracks_df, image_url = result
                             if not artist_df.empty:
                                 st.write(f"###### Here is {text}'s profile metadata")
+                                if image_url:
+                                    st.image(image_url, caption=f'@{text}', width=100)
                                 st.dataframe(artist_df)
                             if not top_tracks_df.empty:
                                 st.write(f"###### Here are {text}'s top songs")
@@ -193,11 +195,14 @@ def main():
                             result = get_podcast_data(text)
                         if result:
                             podcast_df, episodes_df = result
+                            name = podcast_df['Podcast Name'][0]
                             if not podcast_df.empty:
-                                st.write(f"###### Here is {text}'s profile metadata")
+                                st.write(f"###### Here is {name}'s profile metadata")
+                                if podcast_df['Image URL'][0] != 'N/A':
+                                    st.image(podcast_df['Image URL'][0], caption=f'@{name}', width=100)
                                 st.dataframe(podcast_df)
                             if not episodes_df.empty:
-                                st.write(f"###### Here are {text}'s recent episodes")
+                                st.write(f"###### Here are {name}'s recent episodes")
                                 st.dataframe(episodes_df)
                         else:
                             print("Failed to retrieve data.")
@@ -244,6 +249,9 @@ def main():
                             # Fetch the data
                             df = get_profile_metadata(text)
 
+                        # Use the username in the output
+                        st.write(f"Here is {text}'s profile metadata", unsafe_allow_html=True)
+
                         # Display Profile Picture prominently
                         #st.image(df['Profile Pic'].iloc[0], width=200, caption=f"{text}'s Profile Picture", use_column_width=False)
 
@@ -265,15 +273,7 @@ def main():
                         
                         with col7:
                             formatted_posts = format_number(df['Media Count'].iloc[0])
-                            st.metric("Total Posts", formatted_posts)
-                            
-
-                        #with col7:
-                            #st.metric("Total Posts", df['Media Count'].iloc[0])
-                            #st.metric("Videos", df['Videos'].iloc[0])
-
-                        #with col8:
-                            #st.metric("Images", df['Images'].iloc[0])
+                            st.metric("Total Posts", formatted_posts)  
 
                         # Metrics and pie chart in a new row
                         col9, col10, col11, col12, col_space, col13 = st.columns([4, 4, 4, 4, 1, 4])
@@ -281,16 +281,23 @@ def main():
                         metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
 
                         with col9:
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{df['Total Likes'].iloc[0]}<br>Average: {df['Average Likes'].iloc[0]}</div>", unsafe_allow_html=True)
+                            total_likes = "{:,}".format(df['Total Likes'].iloc[0])
+                            avg_likes = "{:,}".format(df['Average Likes'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
 
                         with col10:
-                            st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate</div><div class='submetrics'>{df['Engagement Rate'].iloc[0]}</div>", unsafe_allow_html=True)
+                            engagement_rate = "{:}".format(df['Engagement Rate'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate</div><div class='submetrics'>{engagement_rate}</div>", unsafe_allow_html=True)
 
                         with col11:
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{df['Total Comments'].iloc[0]}<br>Average: {df['Average Comments'].iloc[0]}</div>", unsafe_allow_html=True)
+                            total_comments = "{:,}".format(df['Total Comments'].iloc[0])
+                            avg_comments = "{:,}".format(df['Average Comments'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
 
                         with col12:
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{df['Total Views'].iloc[0]}<br>Average: {df['Average Views'].iloc[0]}</div>", unsafe_allow_html=True)
+                            total_views = "{:,}".format(df['Total Views'].iloc[0])
+                            avg_views = "{:,}".format(df['Average Views'].iloc[0])
+                            st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
 
                         # Optional: If you have a specific metric for 'Number of Views', include it here
 
@@ -672,6 +679,403 @@ def main():
 
                         except Exception as e:
                             st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
+            
+            # building out the advanced selection
+            if dat1 == '📚 Advanced':
+                colA, colB, colC = st.columns([0.425, 0.15, 0.425])
+                with colA:
+                    # text input search bar
+                    text = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
+
+                with colB:
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    button = st.button("🆚 Compare")
+                
+                with colC:
+                    # text input search bar
+                    text2 = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="input_text", value='')
+
+                st.markdown('---')
+
+                if button or text and text2:
+                    colX, colY = st.columns(2)
+                    with colX:
+                        try:
+                            with st.spinner('Visualizing the data...'):
+                                # Fetch the data
+                                df = get_profile_metadata(text)
+
+                            # Use the username in the output
+                            st.write(f"Here is {text}'s profile metadata", unsafe_allow_html=True)
+
+                            # Display Profile Picture prominently
+                            #st.image(df['Profile Pic'].iloc[0], width=200, caption=f"{text}'s Profile Picture", use_column_width=False)
+
+                            
+                            st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Username:</b> {df['User Name'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Full Name:</b> {df['Full Name'].iloc[0] if df['Full Name'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Biography:</b> {df['Biography'].iloc[0][:300] + '...' if len(df['Biography'].iloc[0]) > 300 else df['Biography'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Profile URL:</b> <a href='{df['Profile URL'].iloc[0]}' target='_blank'>{df['Profile URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+
+                            colD, colE, colF = st.columns(3)
+                            with colD:
+                                formatted_followers = format_number(df['Followers'].iloc[0])
+                                st.metric("Followers", formatted_followers)
+                                
+                            with colE:
+                                formatted_following = format_number(df['Following'].iloc[0])
+                                st.metric("Following", formatted_following)
+
+                            with colF:
+                                formatted_posts = format_number(df['Media Count'].iloc[0])
+                                st.metric("Total Posts", formatted_posts,)  
+
+                            metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
+
+                            with colD:
+                                total_likes = "{:,}".format(df['Total Likes'].iloc[0])
+                                avg_likes = "{:,}".format(df['Average Likes'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
+
+                            with colE:
+                                total_comments = "{:,}".format(df['Total Comments'].iloc[0])
+                                avg_comments = "{:,}".format(df['Average Comments'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
+
+                            with colF:
+                                total_views = "{:,}".format(df['Total Views'].iloc[0])
+                                avg_views = "{:,}".format(df['Average Views'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
+
+                            with colE:
+                                engagement_rate = "{:}".format(df['Engagement Rate'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate</div><div class='submetrics'>{engagement_rate}</div>", unsafe_allow_html=True)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                        except:
+                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+
+                    #Trying to show colX and colY simultaneously
+                    with colY:
+                        try:
+                            with st.spinner('Visualizing the data...'):
+                                # Fetch the data
+                                df2 = get_profile_metadata(text2)
+
+                            # Use the username in the output
+                            st.write(f"Here is {text2}'s profile metadata", unsafe_allow_html=True)
+
+                            # Display Profile Picture prominently
+                            #st.image(df['Profile Pic'].iloc[0], width=200, caption=f"{text}'s Profile Picture", use_column_width=False)
+
+                            
+                            st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Username:</b> {df2['User Name'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Full Name:</b> {df2['Full Name'].iloc[0] if df2['Full Name'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Biography:</b> {df2['Biography'].iloc[0][:300] + '...' if len(df2['Biography'].iloc[0]) > 300 else df2['Biography'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Profile URL:</b> <a href='{df2['Profile URL'].iloc[0]}' target='_blank'>{df2['Profile URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+
+                            colD, colE, colF = st.columns(3)
+                            with colD:
+                                formatted_followers = format_number(df2['Followers'].iloc[0])
+                                st.metric("Followers", formatted_followers)
+                                
+                            with colE:
+                                formatted_following = format_number(df2['Following'].iloc[0])
+                                st.metric("Following", formatted_following)
+
+                            with colF:
+                                formatted_posts = format_number(df2['Media Count'].iloc[0])
+                                st.metric("Total Posts", formatted_posts,)  
+
+                            metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
+
+                            with colD:
+                                total_likes = "{:,}".format(df2['Total Likes'].iloc[0])
+                                avg_likes = "{:,}".format(df2['Average Likes'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
+
+                            with colE:
+                                total_comments = "{:,}".format(df2['Total Comments'].iloc[0])
+                                avg_comments = "{:,}".format(df2['Average Comments'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
+
+                            with colF:
+                                total_views = "{:,}".format(df2['Total Views'].iloc[0])
+                                avg_views = "{:,}".format(df2['Average Views'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
+
+                            with colE:
+                                engagement_rate = "{:}".format(df2['Engagement Rate'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate</div><div class='submetrics'>{engagement_rate}</div>", unsafe_allow_html=True)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                        except:
+                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+                    
+                    colG, colH = st.columns(2)
+                    with colG:
+                        try:
+                            # Pie chart for videos vs photos
+                            labels = ['Videos', 'Images']
+                            values = [df['Videos'].iloc[0], df['Images'].iloc[0]]
+                            fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
+                            fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
+                            fig.update_layout(width=300, height=400)  # Adjust the size as needed
+                            st.plotly_chart(fig)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                        except:
+                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+
+                    with colH:
+                        try:
+                            # Pie chart for videos vs photos
+                            labels = ['Videos', 'Images']
+                            values = [df2['Videos'].iloc[0], df2['Images'].iloc[0]]
+                            fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
+                            fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
+                            fig.update_layout(width=300, height=400)  # Adjust the size as needed
+                            st.plotly_chart(fig)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                        except:
+                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+
+                    colI, colJ = st.columns(2)
+                    with colI:
+                        try:
+                            with st.spinner('Visualizing more data...'):
+                                # Fetch the data
+                                df_posts = get_post_metadata(text)
+                            
+                            # Normalize the 'Hashtags' column to ensure each row contains a list
+                            df_posts['Hashtags'] = df_posts['Hashtags'].apply(lambda x: x if isinstance(x, list) else [x] if isinstance(x, str) else [])
+                            
+                            # Concatenate all hashtags into a single list
+                            all_hashtags_list = sum(df_posts['Hashtags'].tolist(), [])
+                            
+                            # Join all hashtags in the list into a single string separated by spaces
+                            all_hashtags_string = ' '.join(all_hashtags_list)
+                            
+                            # Layout for table 
+                            #col_table, col_space = st.columns([8, 1])
+
+                            #with col_table:
+                            st.write("### Trending Posts")
+                            df_filtered = df_posts[['Date', 'Post Type', 'Likes', 'Comments', 'Video Views', 'Post URL']]
+                            st.dataframe(df_filtered, height=400)
+
+                            # Generate the Word Cloud with adjusted parameters
+                            wordcloud = WordCloud(
+                                background_color='white',
+                                max_words=200,
+                                min_word_length=4,
+                                width=2000,
+                                height=1000
+                            ).generate(all_hashtags_string)
+                            # Layout Word Cloud visual
+                            #col_visual, col_space = st.columns([8, 1])
+                            
+                            #with col_visual:
+                            st.write("### Trending Hashtags")
+                            fig, ax = plt.subplots()
+                            ax.imshow(wordcloud, interpolation='bilinear')
+                            ax.axis('off')
+                            st.pyplot(fig)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+
+                    with colJ:
+                        try:
+                            with st.spinner('Visualizing more data...'):
+                                # Fetch the data
+                                df_posts2 = get_post_metadata(text2)
+                            
+                            # Normalize the 'Hashtags' column to ensure each row contains a list
+                            df_posts2['Hashtags'] = df_posts2['Hashtags'].apply(lambda x: x if isinstance(x, list) else [x] if isinstance(x, str) else [])
+                            
+                            # Concatenate all hashtags into a single list
+                            all_hashtags_list = sum(df_posts2['Hashtags'].tolist(), [])
+                            
+                            # Join all hashtags in the list into a single string separated by spaces
+                            all_hashtags_string = ' '.join(all_hashtags_list)
+                            
+                            # Layout for table 
+                            #col_table, col_space = st.columns([8, 1])
+
+                            #with col_table:
+                            st.write("### Trending Posts")
+                            df_filtered = df_posts2[['Date', 'Post Type', 'Likes', 'Comments', 'Video Views', 'Post URL']]
+                            st.dataframe(df_filtered, height=400)
+
+                            # Generate the Word Cloud with adjusted parameters
+                            wordcloud = WordCloud(
+                                background_color='white',
+                                max_words=200,
+                                min_word_length=4,
+                                width=2000,
+                                height=1000
+                            ).generate(all_hashtags_string)
+
+                            # Layout Word Cloud visual
+                            #col_visual, col_space = st.columns([8, 1])
+                            
+                            #with col_visual:
+                            st.write("### Trending Hashtags")
+                            fig, ax = plt.subplots()
+                            ax.imshow(wordcloud, interpolation='bilinear')
+                            ax.axis('off')
+                            st.pyplot(fig)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+
+                    colK, colL = st.columns(2)
+                    with colK:
+                        try:
+                            # Ensure 'Date' is a datetime object and extract the year
+                            df_posts['Date'] = pd.to_datetime(df_posts['Date'])
+                            df_posts['Year'] = df_posts['Date'].dt.year
+
+                            # Filter the DataFrame to include only the past 5 years
+                            current_year = pd.to_datetime('today').year
+                            df_filtered = df_posts[df_posts['Year'] >= current_year - 5]
+
+                            # Aggregate likes, comments, and views by year
+                            aggregated_data = df_filtered.groupby('Year').agg({
+                                'Likes': 'sum',
+                                'Comments': 'sum',
+                                'Video Views': 'sum'
+                            }).reset_index()
+                            
+                            # Generate and display interactive bar charts
+                            # Likes History
+                            fig_likes = px.bar(aggregated_data, x='Year', y='Likes', title='Likes History Over the Past 5 Years', 
+                                            text='Likes', color_discrete_sequence=["#636EFA"])
+                            fig_likes.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Likes")
+                            fig_likes.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                            
+                            # Comments History
+                            fig_comments = px.bar(aggregated_data, x='Year', y='Comments', title='Comments History Over the Past 5 Years', 
+                                                text='Comments', color_discrete_sequence=["#EF553B"])
+                            fig_comments.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Comments")
+                            fig_comments.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                            
+                            # Views History
+                            fig_views = px.bar(aggregated_data, x='Year', y='Video Views', title='Views History Over the Past 5 Years', 
+                                            text='Video Views', color_discrete_sequence=["#00CC96"])
+                            fig_views.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Video Views")
+                            fig_views.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                            
+                            # Display the bar charts
+                            st.plotly_chart(fig_likes, use_container_width=True)
+                            st.plotly_chart(fig_comments, use_container_width=True)
+                            st.plotly_chart(fig_views, use_container_width=True)
+                        
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+
+                    with colL:
+                        try:
+                            # Ensure 'Date' is a datetime object and extract the year
+                            df_posts2['Date'] = pd.to_datetime(df_posts2['Date'])
+                            df_posts2['Year'] = df_posts2['Date'].dt.year
+
+                            # Filter the DataFrame to include only the past 5 years
+                            current_year = pd.to_datetime('today').year
+                            df_filtered = df_posts2[df_posts2['Year'] >= current_year - 5]
+
+                            # Aggregate likes, comments, and views by year
+                            aggregated_data = df_filtered.groupby('Year').agg({
+                                'Likes': 'sum',
+                                'Comments': 'sum',
+                                'Video Views': 'sum'
+                            }).reset_index()
+                            
+                            # Generate and display interactive bar charts
+                            # Likes History
+                            fig_likes = px.bar(aggregated_data, x='Year', y='Likes', title='Likes History Over the Past 5 Years', 
+                                            text='Likes', color_discrete_sequence=["#636EFA"])
+                            fig_likes.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Likes")
+                            fig_likes.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                            
+                            # Comments History
+                            fig_comments = px.bar(aggregated_data, x='Year', y='Comments', title='Comments History Over the Past 5 Years', 
+                                                text='Comments', color_discrete_sequence=["#EF553B"])
+                            fig_comments.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Comments")
+                            fig_comments.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                            
+                            # Views History
+                            fig_views = px.bar(aggregated_data, x='Year', y='Video Views', title='Views History Over the Past 5 Years', 
+                                            text='Video Views', color_discrete_sequence=["#00CC96"])
+                            fig_views.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Video Views")
+                            fig_views.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+                            
+                            # Display the bar charts
+                            st.plotly_chart(fig_likes, use_container_width=True)
+                            st.plotly_chart(fig_comments, use_container_width=True)
+                            st.plotly_chart(fig_views, use_container_width=True)
+                        
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+
+                    colM, colN = st.columns(2)
+                    with colM:
+                        try:
+                            with st.spinner('Visualizing more data...'):
+                                # Fetch the data
+                                df_mentions = get_mention_metadata(text)
+                        
+                            # Displaying a message to indicate data fetching is done
+                            #st.success('Data fetched successfully!')
+                            
+                            # Renaming and selecting specific columns for the display as per requirements
+                            df_display = df_mentions[['Date', 'User Id', 'Post Type', 'Likes', 'Comments', 'Post URL']]
+                            
+                            # Setting the column names as needed
+                            df_display.columns = ['Date', 'User ID', 'Post Type', 'Likes', 'Comments', 'URL']
+                            
+                            # Display the table as scrollable, adjusting height to show about 10 rows
+                            st.write("### Trending Mentions")
+                            st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
+                        
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                    
+                    with colN:
+                        try:
+                            with st.spinner('Visualizing more data...'):
+                                # Fetch the data
+                                df_mentions2 = get_mention_metadata(text2)
+                        
+                            # Displaying a message to indicate data fetching is done
+                            #st.success('Data fetched successfully!')
+                            
+                            # Renaming and selecting specific columns for the display as per requirements
+                            df_display = df_mentions2[['Date', 'User Id', 'Post Type', 'Likes', 'Comments', 'Post URL']]
+                            
+                            # Setting the column names as needed
+                            df_display.columns = ['Date', 'User ID', 'Post Type', 'Likes', 'Comments', 'URL']
+                            
+                            # Display the table as scrollable, adjusting height to show about 10 rows
+                            st.write("### Trending Mentions")
+                            st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
+                        
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
 
         # building out the youtube selection
         if plat == '🎦 Youtube':
@@ -700,6 +1104,230 @@ def main():
                         except Exception as e:
                             st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
 
+            # building out the advanced selection
+            if dat2 == '📚 Advanced':
+                colA, colB, colC = st.columns([0.425, 0.15, 0.425])
+                with colA:
+                    # text input search bar
+                    text = st.text_input('###### Enter the channel\'s username below 👇',placeholder="search here...", key="text_input", value='')
+
+                with colB:
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    button = st.button("🆚 Compare")
+                
+                with colC:
+                    # text input search bar
+                    text2 = st.text_input('###### Enter the channel\'s username below 👇',placeholder="search here...", key="input_text", value='')
+
+                st.markdown('---')
+
+                if button or text and text2:
+                    colX, colY = st.columns(2)
+                    with colX:
+                        try:
+                            with st.spinner('Visualizing the data...'):
+                                df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text)
+                            if error_message:
+                                st.write(error_message)
+
+                            # Use the username in the output
+                            st.write(f"Here is {text}'s profile metadata", unsafe_allow_html=True)
+
+                            
+                            st.image(profile_pic_url, caption='@'+text)
+                            st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Username:</b> {df['Title'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>About:</b> {df['Description'].iloc[0] if df['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Country:</b> {df['Country'].iloc[0] if df['Country'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Channel URL:</b> <a href='{df['Channel URL'].iloc[0]}' target='_blank'>{df['Channel URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+                            
+                            colD, colE, colF = st.columns(3)
+                            with colD:
+                                formatted_followers = format_number(df['Subscriber Count'].iloc[0])
+                                st.metric("Subscribers", formatted_followers)
+                                
+                            with colE:
+                                formatted_posts = format_number(df['Total Videos'].iloc[0])
+                                st.metric("Total Videos", formatted_posts)
+
+                            with colF:
+                                engagement_rate = "{:.2f}".format(df['Engagement Rate (%)'].iloc[0])
+                                st.metric("Engagement Rate", engagement_rate + "%")
+
+                            metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
+
+                            with colD:
+                                total_likes = "{:,}".format(df['Total Likes'].iloc[0])
+                                avg_likes = "{:,}".format(df['Average Likes per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
+
+                            with colE:
+                                total_comments = "{:,}".format(df['Total Comments'].iloc[0])
+                                avg_comments = "{:,}".format(df['Average Comments per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
+
+                            with colF:
+                                total_views = "{:,}".format(df['Total Views'].iloc[0])
+                                avg_views = "{:,}".format(df['Average Views per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                        except:
+                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+
+                    with colY:
+                        try:
+                            with st.spinner('Visualizing the data...'):
+                                df2, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text2)
+                            if error_message:
+                                st.write(error_message)
+
+                            # Use the username in the output
+                            st.write(f"Here is {text2}'s profile metadata", unsafe_allow_html=True)
+
+                            
+                            st.image(profile_pic_url, caption='@'+text2)
+                            st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Username:</b> {df2['Title'].iloc[0]}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>About:</b> {df2['Description'].iloc[0] if df2['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Country:</b> {df2['Country'].iloc[0] if df2['Country'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div class='font'><b>Channel URL:</b> <a href='{df2['Channel URL'].iloc[0]}' target='_blank'>{df2['Channel URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+                            
+                            colD, colE, colF = st.columns(3)
+                            with colD:
+                                formatted_followers = format_number(df2['Subscriber Count'].iloc[0])
+                                st.metric("Subscribers", formatted_followers)
+                                
+                            with colE:
+                                formatted_posts = format_number(df2['Total Videos'].iloc[0])
+                                st.metric("Total Videos", formatted_posts)
+
+                            with colF:
+                                engagement_rate = "{:.2f}".format(df2['Engagement Rate (%)'].iloc[0])
+                                st.metric("Engagement Rate", engagement_rate + "%")  
+
+                            metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
+
+                            with colD:
+                                total_likes = "{:,}".format(df2['Total Likes'].iloc[0])
+                                avg_likes = "{:,}".format(df2['Average Likes per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
+
+                            with colE:
+                                total_comments = "{:,}".format(df2['Total Comments'].iloc[0])
+                                avg_comments = "{:,}".format(df2['Average Comments per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
+
+                            with colF:
+                                total_views = "{:,}".format(df2['Total Views'].iloc[0])
+                                avg_views = "{:,}".format(df2['Average Views per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                        except:
+                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+
+                    colQ, colZ = st.columns(2)
+                    with colQ:
+                        try:
+                            with st.spinner('Visualizing more data...'):
+                                df = fetch_videos_and_details(text) 
+                                # Ensure 'Date' is a datetime object and extract the year
+                                df['Date Posted'] = pd.to_datetime(df['Date Posted'])
+                                df['Year'] = df['Date Posted'].dt.year
+
+                                # Filter the DataFrame to include only the past 5 years
+                                current_year = pd.to_datetime('today').year
+                                df_filtered = df[df['Year'] >= current_year - 5]
+
+                                # Aggregate likes, comments, and views by year
+                                aggregated_data = df_filtered.groupby('Year').agg({
+                                    'Likes': 'sum',
+                                    'Comments': 'sum',
+                                    'Views': 'sum'
+                                }).reset_index()
+                            
+                                # Plotting the bar charts
+                                fig_likes = px.bar(aggregated_data, x='Year', y='Likes', title='Likes History Over the Past 5 Years',
+                                                    color_discrete_sequence=["#636EFA"])
+                                fig_comments = px.bar(aggregated_data, x='Year', y='Comments', title='Comments History Over the Past 5 Years',
+                                                        color_discrete_sequence=["#EF553B"])
+                                fig_views = px.bar(aggregated_data, x='Year', y='Views', title='Views History Over the Past 5 Years',
+                                                    color_discrete_sequence=["#00CC96"])
+
+                                st.plotly_chart(fig_likes, use_container_width=True)
+                                st.plotly_chart(fig_comments, use_container_width=True)
+                                st.plotly_chart(fig_views, use_container_width=True)
+                        
+                                #Setting up a Table for posts
+                                
+                                # Renaming and selecting specific columns for the display as per requirements
+                                df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
+                                
+                                # Setting the column names as needed
+                                df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'URL']
+                                
+                                # Display the table as scrollable, adjusting height to show about 10 rows
+                                st.write("### Channel Posts")
+                                st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
+                            
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+
+                    with colZ:
+                        try:
+                            with st.spinner('Visualizing more data...'):
+                                df2 = fetch_videos_and_details(text2) 
+                                # Ensure 'Date' is a datetime object and extract the year
+                                df2['Date Posted'] = pd.to_datetime(df2['Date Posted'])
+                                df2['Year'] = df2['Date Posted'].dt.year
+
+                                # Filter the DataFrame to include only the past 5 years
+                                current_year = pd.to_datetime('today').year
+                                df_filtered = df2[df2['Year'] >= current_year - 5]
+
+                                # Aggregate likes, comments, and views by year
+                                aggregated_data = df_filtered.groupby('Year').agg({
+                                    'Likes': 'sum',
+                                    'Comments': 'sum',
+                                    'Views': 'sum'
+                                }).reset_index()
+                            
+                                # Plotting the bar charts
+                                fig_likes = px.bar(aggregated_data, x='Year', y='Likes', title='Likes History Over the Past 5 Years',
+                                                    color_discrete_sequence=["#636EFA"])
+                                fig_comments = px.bar(aggregated_data, x='Year', y='Comments', title='Comments History Over the Past 5 Years',
+                                                        color_discrete_sequence=["#EF553B"])
+                                fig_views = px.bar(aggregated_data, x='Year', y='Views', title='Views History Over the Past 5 Years',
+                                                    color_discrete_sequence=["#00CC96"])
+
+                                st.plotly_chart(fig_likes, use_container_width=True)
+                                st.plotly_chart(fig_comments, use_container_width=True)
+                                st.plotly_chart(fig_views, use_container_width=True)
+                        
+                                #Setting up a Table for posts
+                                
+                                # Renaming and selecting specific columns for the display as per requirements
+                                df_display = df2[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
+                                
+                                # Setting the column names as needed
+                                df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'URL']
+                                
+                                # Display the table as scrollable, adjusting height to show about 10 rows
+                                st.write("### Channel Posts")
+                                st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
+                            
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+
         # building out the spotify selection
         if plat == '🎧 Spotify':
             with col2:
@@ -722,9 +1350,11 @@ def main():
                             with st.spinner(f'Extracting data for {username}...'):
                                 result = get_artist_data(username)
                                 if result:
-                                    artist_df, top_tracks_df = result
+                                    artist_df, top_tracks_df, image_url = result
                                     if not artist_df.empty:
                                         st.write(f"###### Here is {username}'s {dat2.split(' ')[0].lower()} metadata")
+                                        if image_url:
+                                            st.image(image_url, caption=f'@{username}', width=100)
                                         st.dataframe(artist_df)
                                     else:
                                         st.write(f"No top tracks data available for {username}")
@@ -747,11 +1377,14 @@ def main():
                                 result = get_podcast_data(username)
                                 if result:
                                     podcast_df, episodes_df = result
+                                    name = podcast_df["Podcast Name"][0]
                                     if not podcast_df.empty:
-                                        st.write(f"###### Here is {username}'s {dat2.split(' ')[0].lower()} metadata")
+                                        st.write(f"###### Here is {name}'s {dat2.split(' ')[0].lower()} metadata")
+                                        if podcast_df['Image URL'][0] != 'N/A':
+                                            st.image(podcast_df['Image URL'][0], caption=f'@{name}', width=100)
                                         st.dataframe(podcast_df)
                                     else:
-                                        st.write(f"No top tracks data available for {username}")
+                                        st.write(f"No top tracks data available for {name}")
                         except Exception as e:
                             st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
 

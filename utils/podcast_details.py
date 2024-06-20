@@ -44,7 +44,8 @@ def get_podcast_details(podcast_id, access_token):
         'Media Type': response_json.get('media_type', 'N/A'),
         'Link': response_json.get('external_urls', {}).get('spotify', 'N/A'),
         'Copyrights': ', '.join(copyright['text'] for copyright in response_json.get('copyrights', [])),
-        'Explicit': response_json.get('explicit', 'N/A')
+        'Explicit': response_json.get('explicit', 'N/A'),
+        'Image URL': response_json.get('images', [{}])[0].get('url', 'N/A')  # Get the image URL
     }
     
     return podcast_data
