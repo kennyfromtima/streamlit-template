@@ -42,6 +42,7 @@ def get_profile_metadata(username):
     avg_comments = round(total_comments / total_posts,2)
     avg_views = round(total_video_views / total_posts,2)
     engagement_rate = round(((total_likes + total_comments) / profile.followers),2)
+    estimated_reach = (engagement_rate * profile.followers) * 1.5
     
     # calculating rates
     likes_rate = round(total_likes/profile.followers,2)
@@ -67,6 +68,7 @@ def get_profile_metadata(username):
         avg_views,
         f"{views_rate}%",
         f"{engagement_rate}%",
+        round(estimated_reach,2),
         videos,
         images,
         profile.is_private,
@@ -79,7 +81,7 @@ def get_profile_metadata(username):
     column_list= ['User Name', 'Full Name', 'Biography', 'Followers',
                      'Following', 'Total Likes', 'Average Likes', 'Likes Rate', 'Total Comments',
                      'Average Comments', 'Comments Rate', 'Total Views', 'Average Views', 'Views Rate',
-                     'Engagement Rate', 'Videos', 'Images', 'Private', 'Verified',
+                     'Engagement Rate', 'Estimated Reach', 'Videos', 'Images', 'Private', 'Verified',
                      'Media Count', 'Profile Pic','Profile URL']
     df = pd.DataFrame(data=data, columns= column_list)
     #profile_pic = profile.profile_pic_url

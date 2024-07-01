@@ -88,6 +88,7 @@ def fetch_and_aggregate_channel_data(username):
         average_views = total_views / video_count if video_count else 0
         subscriber_count = int(channel_data['statistics']['subscriberCount'])
         engagement_rate = ((total_likes + total_comments) / subscriber_count) if subscriber_count else 0
+        estimated_reach = (engagement_rate * subscriber_count) * 1.5
         
         # Compiling data into a DataFrame
         aggregated_data = pd.DataFrame([{
@@ -103,6 +104,7 @@ def fetch_and_aggregate_channel_data(username):
             'Average Comments per Video': round(average_comments,2),
             'Average Views per Video': round(average_views,2),
             'Engagement Rate (%)': round(engagement_rate,2),
+            'Estimated Reach' : round(estimated_reach,2),
             'Channel URL': f"https://www.youtube.com/channel/{channel_id}"
         }])
 
