@@ -38,6 +38,7 @@ setuptools==69.5.1
 six==1.16.0
 smmap==5.0.1
 streamlit==1.31.1
+streamlit_option_menu==0.3.13
 tenacity==8.2.3
 toml==0.10.2
 toolz==0.12.1
@@ -49,3 +50,4 @@ urllib3==2.2.1
 validators==0.22.0
 wordcloud==1.9.3
 zipp==3.17.0
+linkedin-api==2.1.1

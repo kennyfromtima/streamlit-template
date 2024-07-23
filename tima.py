@@ -22,12 +22,14 @@
 """
 # Streamlit dependencies
 import streamlit as st
+from streamlit_option_menu import option_menu
 
 # Data handling dependencies
 import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import plotly.express as px
 from wordcloud import WordCloud
+from linkedin_api import Linkedin
 import pygwalker as pyg
 import pandas as pd
 import numpy as np
@@ -41,18 +43,66 @@ from utils.channel_posts import fetch_videos_and_details
 from utils.artist_details import get_artist_data
 from utils.podcast_details import get_podcast_data
 
+# Set the page config
+st.set_page_config(page_title="TIMA Social Data Center", page_icon="📊")
+
 # App declaration
 def main():
+    # Custom CSS
+    st.markdown("""
+    <style>
+    .sidebar .sidebar-content {
+        background-color: #f8f9fa;
+        color: black;
+    }
+    .sidebar .sidebar-content h2 {
+        color: #007bff;
+    }
+    .stButton>button {
+        background-color: #FA040F;
+        color: white;
+        border-radius: 8px;
+        padding: 0.3em;
+    }
+    .stButton>button:hover {
+        color: white;
+        background-color: #808B96;
+    }
+    .stRadio>label {
+        font-size: 1.1em;
+        color: #007bff;
+    }
+    .stTextInput>label {
+        font-size: 1.1em;
+        color: #007bff;
+    }
+    .stSpinner>div>div {
+        border-color: #007bff transparent #007bff transparent;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # building out the pages
-    page_options = ["📤 Data Extraction","📈 Data Visualization","⚔️ Competitors' Insight","💡 Solution Overview"]
+    page_options = ["Data Extraction","Data Visualization","Competitors' Insight","Solution Overview"]
+
+    # Sidebar menu
+    with st.sidebar:
+        st.image('resources/imgs/tima_logo.png', use_column_width=True)
+        st.markdown("<h2 style='text-align: center;'>TIMA Social Data Center</h2>", unsafe_allow_html=True)
+        page_selection = option_menu(" ", page_options,
+                                     icons=["cloud-download", "bar-chart-line", "shield-shaded", "lightbulb"],
+                                     menu_icon="cast", default_index=0, orientation="vertical",
+                                     styles={"container": {"padding": "0!important", "background-color": "black"},
+                                             "icon": {"color": "#007bff", "font-size": "23px"},
+                                             "nav-link": {"font-size": "17px", "text-align": "center", "margin": "0px", "--hover-color": "#808B96"},
+                                             "nav-link-selected": {"background-color": "#FA040F", "color": "white"}})
 
     # -------------------------------------------------------------------
     # selecting the page
-    page_selection = st.sidebar.selectbox("📑 Menu", page_options)
-    if page_selection == "📤 Data Extraction":
+    if page_selection == "Data Extraction":
         # Header contents
         st.image('resources/imgs/tima_logo.png',use_column_width=True,)
-        st.markdown("<h2 style='text-align: center; color: white;'>TIMA Social Data Center</h2>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #007bff;'>📤 Data Extraction</h3>", unsafe_allow_html=True)
         st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>TIMA\'s portal for social media data sourcing 📊</h5>", unsafe_allow_html=True)
         st.markdown('---')
 
@@ -61,7 +111,7 @@ def main():
 
         with col1:
             # platform selection
-            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube', '🎧 Spotify'),)
+            plat = st.radio("##### Select a platform",('🎦 Youtube', '📸 Instagram', '🎧 Spotify', '👔 Linkedin'))
     
         # building out the instagram selection
         if plat == '📸 Instagram':
@@ -210,8 +260,71 @@ def main():
                     except:
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                 Please cross-check your network connection and the username you entered!")
-    # -------------------------------------------------------------------
+        ##############################################################################################################              
+        # building out the linkedin selection
+        if plat == '👔 Linkedin':
+            with col2:
+                # setup a log in area for Linkedin
+                st.write("##### Log in to your Linkedin account to access Linkedin's API")
+                user = st.text_input('###### Username(Email)',placeholder="type here...")
+                passw = st.text_input('###### Password',placeholder="type here...", type='password')
 
+                st.write("##### Specify the target account 👇")
+                target = st.text_input('###### Username',placeholder="type here...")
+                login = st.button("🔐 Get data")
+
+            if user and passw and target and login:
+                try:
+                    with col2:
+                        with st.spinner('Fetching data...'):
+                            api = Linkedin(username=user, password=passw)
+                            # Fetch the target user's profile data
+                            profile = api.get_profile(target)
+                                
+                    st.toast("Successful", icon='✅')
+                    st.markdown('---')
+
+                    with st.spinner('Compiling data...'):
+
+                        #------------------------------------------------------------------------------------------
+                        # Definition of an Important Function
+                        # Function to extract an account's info
+                        def extract_essential_info(profile):
+                            # Extract profile picture URL
+                            profile_picture_url = profile.get("displayPictureUrl", "")
+
+                            essential_info = {
+                                "Full Name": f"{profile.get('firstName', '')} {profile.get('lastName', '')}",
+                                "Headline": profile.get("headline", ""),
+                                "Location": profile.get("locationName", ""),
+                                "Industry": profile.get("industryName", ""),
+                                "Current Position": profile.get("headline", ""),
+                                "Current Company": profile.get("companyName", ""),
+                                "Skills": [skill["name"] for skill in profile.get("skills", [])],
+                                "Number of Connections": profile.get("connections", 0),  # Adjusted field name
+                                "Number of Followers": profile.get("followerCount", 0),  # Adjusted field name
+                                "Profile Picture URL": profile_picture_url
+                            }
+                            return essential_info
+                        # --------------------------------------------------------------------------------------------
+                            
+                        # Extract and display the essential information
+                        essential_profile = extract_essential_info(profile)
+
+                        st.subheader(f"Essential Profile Data for {target}")
+                        for key, value in essential_profile.items():
+                            if key == "Skills":
+                                st.subheader(key)
+                                for item in value:
+                                    st.write(f"  - {item}")
+                            else:
+                                st.subheader(key)
+                                st.write(value)
+
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+        # -------------------------------------------------------------------
+        ###########################################################################################################
     # Function to format numbers to nearest thousand with 'K'
     def format_number(num):
         if num < 1000:
@@ -221,10 +334,10 @@ def main():
         else:
             return f"{num/1000000:.2f}M"
 
-    if page_selection == "📈 Data Visualization":
+    if page_selection == "Data Visualization":
         # Header contents
         st.image('resources/imgs/tima_logo.png',use_column_width=True,)
-        #st.markdown("<h2 style='text-align: center; color: white;'>TIMA Social Data Center</h2>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #FA040F;'>📈 Data Visualization</h3>", unsafe_allow_html=True)
         st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>TIMA\'s portal for social media data sourcing 📊</h5>", unsafe_allow_html=True)
         st.markdown('---')
 
@@ -642,10 +755,10 @@ def main():
                         st.error(f"An error occurred: {e}") 
     # -------------------------------------------------------------------
 
-    if page_selection == "⚔️ Competitors' Insight":
+    if page_selection == "Competitors' Insight":
         # Header contents
         st.image('resources/imgs/tima_logo.png',use_column_width=True,)
-        #st.markdown("<h2 style='text-align: center; color: white;'>TIMA Social Data Center</h2>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #F4D03F;'>🛡️ Competitors' Insight</h3>", unsafe_allow_html=True)
         st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>TIMA\'s portal for social media data sourcing 📊</h5>", unsafe_allow_html=True)
         st.markdown('---')
         st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>*Get real-time metrics on similar brands/accounts at once! 🚀</h5>", unsafe_allow_html=True)
@@ -1413,9 +1526,28 @@ def main():
                             st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
 
     # ------------- SAFE FOR ALTERING/EXTENSION -------------------------
-    if page_selection == "💡 Solution Overview":
-        st.title("Solution Overview")
-        st.write("Describe the process of this app on this page")
+    if page_selection == "Solution Overview":
+        # Header contents
+        st.image('resources/imgs/tima_logo.png',use_column_width=True,)
+        st.markdown("<h3 style='text-align: center; color: #82E0AA;'>💡 Solution Overview</h3>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center; color: grey; font-style: italic'>TIMA\'s portal for social media data sourcing 📊</h5>", unsafe_allow_html=True)
+        st.markdown('---')
+        st.write("""
+        **TIMA** Social Data Center is a comprehensive tool designed for social media data analysis.
+                 This portal enables users to visualize various metrics for social media accounts,
+                 providing insights on followers, likes, comments, engagement rates, estimated reach and more.
+                 Currently, it supports:
+
+        - 📸 Instagram
+        - 🎦 YouTube
+        - 🎧 Spotify
+
+        ### Features
+        - **Ready-made Visuals:**   Get pre-defined visualizations for social media accounts.
+        - **Custom-made Visuals:**  Customize the visuals as per your requirements.
+        - **Data Download:**    Download the data for offline analysis.
+        - **Export Visuals:**   Export generated visuals for presentations and data reporting.
+        """)
 
     # You may want to add more sections here for other aspects such as company profile.
 
