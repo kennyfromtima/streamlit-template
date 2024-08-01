@@ -8,10 +8,12 @@
 """
 
 # Import required Libraries
+import streamlit as st
 import instaloader
 import pandas as pd
 
 # Create a function that extracts data from a profile
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_profile_metadata(username):
     # Create an Instaloader instance
     L = instaloader.Instaloader()
@@ -84,6 +86,6 @@ def get_profile_metadata(username):
                      'Engagement Rate', 'Estimated Reach', 'Videos', 'Images', 'Private', 'Verified',
                      'Media Count', 'Profile Pic','Profile URL']
     df = pd.DataFrame(data=data, columns= column_list)
-    #profile_pic = profile.profile_pic_url
+    profile_pic = profile.profile_pic_url
 
     return df

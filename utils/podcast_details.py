@@ -1,3 +1,5 @@
+# Import libraries
+import streamlit as st
 import requests
 import base64
 import pandas as pd
@@ -6,6 +8,7 @@ import pandas as pd
 client_id = 'b6961159550e4f3b823e5890002e27a9'
 client_secret = '98cee7f07b514488a375ba4985f1448b'
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_access_token():
     token_url = "https://accounts.spotify.com/api/token"
     client_creds = f"{client_id}:{client_secret}"
@@ -25,6 +28,7 @@ def get_access_token():
         print("Failed to get access token:", token_response.get('error', 'Unknown error'))
         return None
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_podcast_details(podcast_id, access_token):
     podcast_endpoint = f"https://api.spotify.com/v1/shows/{podcast_id}"
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -50,6 +54,7 @@ def get_podcast_details(podcast_id, access_token):
     
     return podcast_data
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_recent_episodes(podcast_id, access_token, limit=100):
     episodes_endpoint = f"https://api.spotify.com/v1/shows/{podcast_id}/episodes"
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -86,6 +91,7 @@ def get_recent_episodes(podcast_id, access_token, limit=100):
     
     return pd.DataFrame(episode_details)
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_podcast_data(podcast_id):
     access_token = get_access_token()
     if not access_token:

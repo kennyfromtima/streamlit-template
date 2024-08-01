@@ -6,7 +6,7 @@
     Author: Todimu Pitan.
 
 """
-
+import streamlit as st
 from googleapiclient.discovery import build
 import pandas as pd
 
@@ -14,6 +14,7 @@ import pandas as pd
 api_key = 'AIzaSyBGf2wn9gHL6TyOTc7sUyABsWHLkDpqPHM'
 youtube = build('youtube', 'v3', developerKey=api_key)
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def search_channel_by_name(channel_name):
     # Use the YouTube API search endpoint to locate the channel by a given name or identifier
     search_response = youtube.search().list(
@@ -29,6 +30,7 @@ def search_channel_by_name(channel_name):
     else:
         return None
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def fetch_videos_and_details(username, max_videos=1000):
     # Search channel ID by name
     channel_id = search_channel_by_name(username)

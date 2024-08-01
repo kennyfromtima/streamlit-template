@@ -1,3 +1,4 @@
+############################################################# APP DEPENDENCIES ###################################################################
 """
 
     Streamlit webserver-based Social media data Extractor
@@ -25,6 +26,7 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 
 # Data handling dependencies
+import datetime
 import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -42,7 +44,7 @@ from utils.channel_details import fetch_and_aggregate_channel_data
 from utils.channel_posts import fetch_videos_and_details
 from utils.artist_details import get_artist_data
 from utils.podcast_details import get_podcast_data
-
+############################################################# APP CONFIGURATION PAGE ###################################################################
 # Set the page config
 st.set_page_config(page_title="TIMA Social Data Center", page_icon="📊")
 
@@ -96,8 +98,7 @@ def main():
                                              "icon": {"color": "#007bff", "font-size": "23px"},
                                              "nav-link": {"font-size": "17px", "text-align": "center", "margin": "0px", "--hover-color": "#808B96"},
                                              "nav-link-selected": {"background-color": "#FA040F", "color": "white"}})
-
-    # -------------------------------------------------------------------
+############################################################# DATA EXTRACTION PAGE ###################################################################
     # selecting the page
     if page_selection == "Data Extraction":
         # Header contents
@@ -143,6 +144,7 @@ def main():
                     try:
                         with st.spinner('Extracting the data...'):
                             df = get_post_metadata(text)
+
                         st.write(f"###### Here is {text}'s posts metadata")
                         st.dataframe(df)
 
@@ -156,6 +158,7 @@ def main():
                     try:
                         with st.spinner('Extracting the data...'):
                             df = get_mention_metadata(text)
+
                         st.write(f"###### Here is {text}'s mentions metadata")
                         st.dataframe(df)
 
@@ -214,7 +217,7 @@ def main():
             # text input search bar
             text = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
             
-            # building out the channel metadata selection
+            # building out the artist metadata selection
             if dat2 == '👨‍🎤 Artist `metadata`':
                 if st.button("⏬ Extract") or text:
                     try:
@@ -237,7 +240,7 @@ def main():
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                 Please cross-check your network connection and the username you entered!")
                         
-            # building out the posts metadata selection
+            # building out the podcast metadata selection
             if dat2 == '🎙️ Podcast `metadata`':
                 if st.button("⏬ Extract") or text:
                     try:
@@ -260,7 +263,7 @@ def main():
                     except:
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                 Please cross-check your network connection and the username you entered!")
-        ##############################################################################################################              
+        #---------------------------------------------------------------------------------------------------------------------------            
         # building out the linkedin selection
         if plat == '👔 Linkedin':
             with col2:
@@ -273,6 +276,7 @@ def main():
                 target = st.text_input('###### Username',placeholder="type here...")
                 login = st.button("🔐 Get data")
 
+            # Create logic for data extraction
             if user and passw and target and login:
                 try:
                     with col2:
@@ -288,7 +292,8 @@ def main():
 
                         #------------------------------------------------------------------------------------------
                         # Definition of an Important Function
-                        # Function to extract an account's info
+                        # Function to extract an account's Linkedin info
+                        @st.cache_data(ttl=10800, show_spinner=False)
                         def extract_essential_info(profile):
                             # Extract profile picture URL
                             profile_picture_url = profile.get("displayPictureUrl", "")
@@ -323,8 +328,8 @@ def main():
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
-        # -------------------------------------------------------------------
-        ###########################################################################################################
+        #------------------------------------------------------------------------------------------------------------------------
+############################################################# DATA VISUALIZATION PAGE ###################################################################
     # Function to format numbers to nearest thousand with 'K'
     def format_number(num):
         if num < 1000:
@@ -343,20 +348,21 @@ def main():
 
         col3, col4 = st.columns(2)
         with col3:
-            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube'))
+            plat = st.radio("##### Select a platform",('🎦 Youtube', '📸 Instagram'))
 
-        # logic control
+        # logic control for instagram
         if plat == '📸 Instagram':
             with col4:
                 # platform selection
                 viz = st.radio("##### Select Visualization type",options=('🤖 Get `ready-made` visuals', '🛠️ Get `custom-made` visuals'))
             st.markdown('---')
 
-            # building out the instagram selection
+            # building out the ready-made selection
             if viz == '🤖 Get `ready-made` visuals':
                 # text input search bar
                 text = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
                 if st.button("⏩ Visualize") or text:
+                    # try extracting the profile metadata
                     try:
                         with st.spinner('Visualizing the data...'):
                             # Fetch the data
@@ -414,16 +420,14 @@ def main():
                             avg_views = "{:,}".format(df['Average Views'].iloc[0])
                             st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
 
-                        # Optional: If you have a specific metric for 'Number of Views', include it here
-
                         # Pie chart for videos vs photos
-                        with col13:
-                            labels = ['Videos', 'Images']
-                            values = [df['Videos'].iloc[0], df['Images'].iloc[0]]
-                            fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
-                            fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
-                            fig.update_layout(width=300, height=400)  # Adjust the size as needed
-                            st.plotly_chart(fig)
+                        #with col13:
+                            #labels = ['Videos', 'Images']
+                            #values = [df['Videos'].iloc[0], df['Images'].iloc[0]]
+                            #fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
+                            #fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
+                            #fig.update_layout(width=300, height=400)  # Adjust the size as needed
+                            #st.plotly_chart(fig)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
@@ -431,7 +435,7 @@ def main():
                         st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
 
 
-
+                    # try extracting the post metadata
                     try:
                         with st.spinner('Visualizing more data...'):
                             # Fetch the data
@@ -445,11 +449,8 @@ def main():
                         
                         # Join all hashtags in the list into a single string separated by spaces
                         all_hashtags_string = ' '.join(all_hashtags_list)
-                        
-                        # Layout for table 
-                        #col_table, col_space = st.columns([8, 1])
 
-                        #with col_table:
+                        # display the table
                         st.write("### Trending Posts")
                         df_filtered = df_posts[['Date', 'Post Type', 'Likes', 'Comments', 'Video Views', 'Post URL']]
                         st.dataframe(df_filtered, height=400)
@@ -464,19 +465,17 @@ def main():
                         ).generate(all_hashtags_string)
 
 
-                        # Layout Word Cloud visual
-                        #col_visual, col_space = st.columns([8, 1])
-                        
-                        #with col_visual:
+                        # Display Word Cloud visual
                         st.write("### Trending Hashtags")
                         fig, ax = plt.subplots()
                         ax.imshow(wordcloud, interpolation='bilinear')
                         ax.axis('off')
                         st.pyplot(fig)
 
-                        # Ensure 'Date' is a datetime object and extract the year
+                        # Ensure 'Date' is a datetime object and extract the year, month
                         df_posts['Date'] = pd.to_datetime(df_posts['Date'])
                         df_posts['Year'] = df_posts['Date'].dt.year
+                        df_posts['Month'] = df_posts['Date'].dt.strftime('%B %Y')
 
                         # Filter the DataFrame to include only the past 5 years
                         current_year = pd.to_datetime('today').year
@@ -516,14 +515,14 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
 
-                    
+                    # try extracting the mentions metadata
                     try:
                         with st.spinner('Visualizing more data...'):
                             # Fetch the data
                             df_mentions = get_mention_metadata(text)
                     
                         # Displaying a message to indicate data fetching is done
-                        #st.success('Data fetched successfully!')
+                        st.success('Data fetched successfully!')
                         
                         # Renaming and selecting specific columns for the display as per requirements
                         df_display = df_mentions[['Date', 'User Id', 'Post Type', 'Likes', 'Comments', 'Post URL']]
@@ -538,11 +537,12 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
             
-            # building out the instagram selection
+            # building out the custom-made selection
             if viz == '🛠️ Get `custom-made` visuals':
                 # text input search bar
                 text2 = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
                 if st.button("⏩ Visualize") or text2:
+                    # try extracting the profile metadata
                     try:
                         with st.spinner('Visualizing the data...'):
                             df = get_profile_metadata(text2)
@@ -560,7 +560,7 @@ def main():
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                     Please cross-check your network connection and the username you entered!")           
 
-
+                    # try extracting the post metadata
                     try:
                         with st.spinner('Visualizing more data...'):
                             df2 = get_post_metadata(text2)
@@ -575,7 +575,7 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
 
-
+                    # try extracting the mentions metadata
                     try:
                         with st.spinner('Visualizing more data...'):
                             df3 = get_mention_metadata(text2)
@@ -590,18 +590,19 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
 
-
+        # logic control for youtube
         if plat == '🎦 Youtube':
             with col4:
                 # platform selection
                 viz = st.radio("##### Select Visualization type",options=('🤖 Get `ready-made` visuals', '🛠️ Get `custom-made` visuals'))
             st.markdown('---')
 
-            # building out the youtube selection
+            # building out the ready-made selection
             if viz == '🤖 Get `ready-made` visuals':
                 # text input search bar
                 text = st.text_input('###### Enter the channels\'s username below 👇',placeholder="search here...", key="text_input", value='')
                 if st.button("⏩ Visualize") or text:
+                    # try extracting the channel metadata
                     try:
                         with st.spinner('Visualizing the data...'):
                             df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text)
@@ -666,7 +667,7 @@ def main():
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                     Please cross-check your network connection and the username you entered!")
                     
-                    
+                    # try extracting the posts metadata
                     try:
                         with st.spinner('Visualizing more data...'):
                             df = fetch_videos_and_details(text) 
@@ -696,11 +697,8 @@ def main():
                         st.plotly_chart(fig_likes, use_container_width=True)
                         st.plotly_chart(fig_comments, use_container_width=True)
                         st.plotly_chart(fig_views, use_container_width=True)
-
-
                 
                         #Setting up a Table for posts
-                        
                         # Renaming and selecting specific columns for the display as per requirements
                         df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
                         
@@ -714,11 +712,12 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
             
-            # building out the youtube selection
+            # building out the custom-made selection
             if viz == '🛠️ Get `custom-made` visuals':
                 # text input search bar
                 text2 = st.text_input('###### Enter the channels\'s username below 👇',placeholder="search here...", key="text_input", value='')
                 if st.button("⏩ Visualize") or text2:
+                    # try extracting the channel metadata
                     try:
                         with st.spinner('Visualizing the data...'):
                             df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text2)
@@ -739,7 +738,7 @@ def main():
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                     Please cross-check your network connection and the username you entered!")
                     
-                    
+                    # try extracting the posts metadata
                     try:
                         with st.spinner('Visualizing more data...'):
                             df2 = fetch_videos_and_details(text2)
@@ -753,7 +752,7 @@ def main():
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}") 
-    # -------------------------------------------------------------------
+############################################################# COMPETITORS' INSIGHT PAGE ###################################################################
 
     if page_selection == "Competitors' Insight":
         # Header contents
@@ -769,7 +768,7 @@ def main():
 
         with col1:
             # platform selection
-            plat = st.radio("##### Select a platform",('📸 Instagram', '🎦 Youtube', '🎧 Spotify'),)
+            plat = st.radio("##### Select a platform",('🎦 Youtube', '📸 Instagram', '🎧 Spotify'),)
     
         # building out the instagram selection
         if plat == '📸 Instagram':
@@ -805,7 +804,7 @@ def main():
                     text = st.text_input('###### Enter the account\'s username below 👇',placeholder="search here...", key="text_input", value='')
 
                 with colB:
-                    st.write("")
+                    st.write("") # just to create some space
                     st.write("")
                     st.write("")
                     st.write("")
@@ -940,35 +939,35 @@ def main():
                             st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
                     
                     colG, colH = st.columns(2)
-                    with colG:
-                        try:
+                    #with colG:
+                        #try:
                             # Pie chart for videos vs photos
-                            labels = ['Videos', 'Images']
-                            values = [df['Videos'].iloc[0], df['Images'].iloc[0]]
-                            fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
-                            fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
-                            fig.update_layout(width=300, height=400)  # Adjust the size as needed
-                            st.plotly_chart(fig)
+                            #labels = ['Videos', 'Images']
+                            #values = [df['Videos'].iloc[0], df['Images'].iloc[0]]
+                            #fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
+                            #fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
+                            #fig.update_layout(width=300, height=400)  # Adjust the size as needed
+                            #st.plotly_chart(fig)
 
-                        except Exception as e:
-                            st.error(f"An error occurred: {e}")
-                        except:
-                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+                        #except Exception as e:
+                            #st.error(f"An error occurred: {e}")
+                        #except:
+                            #st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
 
-                    with colH:
-                        try:
+                    #with colH:
+                        #try:
                             # Pie chart for videos vs photos
-                            labels = ['Videos', 'Images']
-                            values = [df2['Videos'].iloc[0], df2['Images'].iloc[0]]
-                            fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
-                            fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
-                            fig.update_layout(width=300, height=400)  # Adjust the size as needed
-                            st.plotly_chart(fig)
+                            #labels = ['Videos', 'Images']
+                            #values = [df2['Videos'].iloc[0], df2['Images'].iloc[0]]
+                            #fig = px.pie(names=labels, values=values, title="Videos vs Images Distribution")
+                            #fig.update_traces(textinfo='value+percent', pull=[0.1, 0])
+                            #fig.update_layout(width=300, height=400)  # Adjust the size as needed
+                            #st.plotly_chart(fig)
 
-                        except Exception as e:
-                            st.error(f"An error occurred: {e}")
-                        except:
-                            st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
+                        #except Exception as e:
+                            #st.error(f"An error occurred: {e}")
+                        #except:
+                            #st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
 
                     colI, colJ = st.columns(2)
                     with colI:
@@ -985,11 +984,8 @@ def main():
                             
                             # Join all hashtags in the list into a single string separated by spaces
                             all_hashtags_string = ' '.join(all_hashtags_list)
-                            
-                            # Layout for table 
-                            #col_table, col_space = st.columns([8, 1])
 
-                            #with col_table:
+                            # Display the table
                             st.write("### Trending Posts")
                             df_filtered = df_posts[['Date', 'Post Type', 'Likes', 'Comments', 'Video Views', 'Post URL']]
                             st.dataframe(df_filtered, height=400)
@@ -1002,10 +998,8 @@ def main():
                                 width=2000,
                                 height=1000
                             ).generate(all_hashtags_string)
-                            # Layout Word Cloud visual
-                            #col_visual, col_space = st.columns([8, 1])
-                            
-                            #with col_visual:
+
+                            # Display Word Cloud visual
                             st.write("### Trending Hashtags")
                             fig, ax = plt.subplots()
                             ax.imshow(wordcloud, interpolation='bilinear')
@@ -1030,10 +1024,7 @@ def main():
                             # Join all hashtags in the list into a single string separated by spaces
                             all_hashtags_string = ' '.join(all_hashtags_list)
                             
-                            # Layout for table 
-                            #col_table, col_space = st.columns([8, 1])
-
-                            #with col_table:
+                            # Display the table:
                             st.write("### Trending Posts")
                             df_filtered = df_posts2[['Date', 'Post Type', 'Likes', 'Comments', 'Video Views', 'Post URL']]
                             st.dataframe(df_filtered, height=400)
@@ -1047,10 +1038,7 @@ def main():
                                 height=1000
                             ).generate(all_hashtags_string)
 
-                            # Layout Word Cloud visual
-                            #col_visual, col_space = st.columns([8, 1])
-                            
-                            #with col_visual:
+                            # Display Word Cloud visual
                             st.write("### Trending Hashtags")
                             fig, ax = plt.subplots()
                             ax.imshow(wordcloud, interpolation='bilinear')
@@ -1157,7 +1145,7 @@ def main():
                                 df_mentions = get_mention_metadata(text)
                         
                             # Displaying a message to indicate data fetching is done
-                            #st.success('Data fetched successfully!')
+                            st.success('Data fetched successfully!')
                             
                             # Renaming and selecting specific columns for the display as per requirements
                             df_display = df_mentions[['Date', 'User Id', 'Post Type', 'Likes', 'Comments', 'Post URL']]
@@ -1179,7 +1167,7 @@ def main():
                                 df_mentions2 = get_mention_metadata(text2)
                         
                             # Displaying a message to indicate data fetching is done
-                            #st.success('Data fetched successfully!')
+                            st.success('Data fetched successfully!')
                             
                             # Renaming and selecting specific columns for the display as per requirements
                             df_display = df_mentions2[['Date', 'User Id', 'Post Type', 'Likes', 'Comments', 'Post URL']]
@@ -1229,7 +1217,7 @@ def main():
                     text = st.text_input('###### Enter the channel\'s username below 👇',placeholder="search here...", key="text_input", value='')
 
                 with colB:
-                    st.write("")
+                    st.write("") # just to create some space
                     st.write("")
                     st.write("")
                     st.write("")
@@ -1524,8 +1512,7 @@ def main():
                                         st.write(f"No top tracks data available for {name}")
                         except Exception as e:
                             st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
-
-    # ------------- SAFE FOR ALTERING/EXTENSION -------------------------
+############################################################# SOLUTION OVERVIEW PAGE ###################################################################
     if page_selection == "Solution Overview":
         # Header contents
         st.image('resources/imgs/tima_logo.png',use_column_width=True,)
@@ -1538,8 +1525,8 @@ def main():
                  providing insights on followers, likes, comments, engagement rates, estimated reach and more.
                  Currently, it supports:
 
-        - 📸 Instagram
         - 🎦 YouTube
+        - 📸 Instagram
         - 🎧 Spotify
 
         ### Features

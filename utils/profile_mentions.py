@@ -8,10 +8,12 @@
 """
 
 # Import required Libraries
+import streamlit as st
 import instaloader
 import pandas as pd
 
 # Create a function that extracts post mentions for a profile
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_mention_metadata(username):
     # Create an Instaloader instance
     L = instaloader.Instaloader()

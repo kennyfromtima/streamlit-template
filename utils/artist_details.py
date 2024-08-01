@@ -1,3 +1,5 @@
+# Import Libraries
+import streamlit as st
 import requests
 import base64
 import pandas as pd
@@ -6,6 +8,7 @@ import pandas as pd
 client_id = 'b6961159550e4f3b823e5890002e27a9'
 client_secret = '98cee7f07b514488a375ba4985f1448b'
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_access_token():
     token_url = "https://accounts.spotify.com/api/token"
     client_creds = f"{client_id}:{client_secret}"
@@ -25,6 +28,7 @@ def get_access_token():
         print("Failed to get access token:", token_response.get('error', 'Unknown error'))
         return None
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def fetch_artist_details(artist_name, access_token):
     """Fetch artist details by name from Spotify."""
     search_endpoint = "https://api.spotify.com/v1/search"
@@ -55,6 +59,7 @@ def fetch_artist_details(artist_name, access_token):
     
     return pd.DataFrame([artist_data]), artist_id, image_url
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def fetch_artist_top_tracks(artist_id, access_token):
     """Fetch top tracks of an artist from Spotify and include popularity data."""
     if artist_id is None:
@@ -80,6 +85,7 @@ def fetch_artist_top_tracks(artist_id, access_token):
 
     return pd.DataFrame(top_tracks)
 
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_artist_data(artist_name):
     """Main function to retrieve and display artist data and top tracks."""
     access_token = get_access_token()
