@@ -11,6 +11,8 @@
 import streamlit as st
 from googleapiclient.discovery import build
 import pandas as pd
+from datetime import datetime, timedelta
+import requests
 
 # API key (replace with yours)
 api_key = 'AIzaSyBGf2wn9gHL6TyOTc7sUyABsWHLkDpqPHM'
@@ -111,7 +113,36 @@ def fetch_and_aggregate_channel_data(username):
             'Channel URL': f"https://www.youtube.com/channel/{channel_id}"
         }])
 
-        return aggregated_data, None , profile_picture_url
+        return aggregated_data, None , profile_picture_url, channel_id
     
     except Exception as e:
         return None, str(e), None
+    
+@st.cache_data(ttl=10800, show_spinner=False)
+def collect_subscriber_data_over_time(channel_id, days=1825):  # 5 years
+    # Collect subscriber data for the past `days` days (using monthly intervals)
+    subscriber_data = []
+    current_date = datetime.now()
+
+    try:
+        # Fetch channel details for the current period
+        for i in range(0, days, 30):  # Monthly intervals
+            past_date = current_date - timedelta(days=i)
+            past_date_str = past_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            channel_response = youtube.channels().list(
+                part='statistics',
+                id=channel_id
+            ).execute()
+
+            if 'items' in channel_response and len(channel_response['items']) > 0:
+                stats = channel_response['items'][0]['statistics']
+                subscriber_count = int(stats['subscriberCount'])
+                subscriber_data.append({'date': past_date_str, 'subscribers': subscriber_count})
+            else:
+                raise Exception("Failed to fetch channel statistics.")
+            
+        return pd.DataFrame(subscriber_data)
+
+    except Exception as e:
+        print(f"Error fetching data: {e}")

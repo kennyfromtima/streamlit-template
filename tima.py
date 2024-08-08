@@ -35,6 +35,7 @@ from linkedin_api import Linkedin
 import pygwalker as pyg
 import pandas as pd
 import numpy as np
+import calendar
 
 # Custom Libraries
 from utils.profile_details import get_profile_metadata
@@ -44,6 +45,7 @@ from utils.channel_details import fetch_and_aggregate_channel_data
 from utils.channel_posts import fetch_videos_and_details
 from utils.artist_details import get_artist_data
 from utils.podcast_details import get_podcast_data
+from utils.channel_details import collect_subscriber_data_over_time
 ############################################################# APP CONFIGURATION PAGE ###################################################################
 # Set the page config
 st.set_page_config(page_title="TIMA Social Data Center", page_icon="📊")
@@ -181,7 +183,7 @@ def main():
                 if st.button("⏬ Extract") or text:
                     try:
                         with st.spinner('Extracting the data...'):
-                            df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text)
+                            df, error_message, profile_pic_url, channel_id = fetch_and_aggregate_channel_data(text)
                         if error_message:
                             st.write(error_message)
                         else:
@@ -329,7 +331,7 @@ def main():
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
         #------------------------------------------------------------------------------------------------------------------------
-############################################################# DATA VISUALIZATION PAGE ###################################################################
+############################################################## DATA VISUALIZATION PAGE ###################################################################
     # Function to format numbers to nearest thousand with 'K'
     def format_number(num):
         if num < 1000:
@@ -520,9 +522,6 @@ def main():
                         with st.spinner('Visualizing more data...'):
                             # Fetch the data
                             df_mentions = get_mention_metadata(text)
-                    
-                        # Displaying a message to indicate data fetching is done
-                        st.success('Data fetched successfully!')
                         
                         # Renaming and selecting specific columns for the display as per requirements
                         df_display = df_mentions[['Date', 'User Id', 'Post Type', 'Likes', 'Comments', 'Post URL']]
@@ -605,7 +604,7 @@ def main():
                     # try extracting the channel metadata
                     try:
                         with st.spinner('Visualizing the data...'):
-                            df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text)
+                            df, error_message, profile_pic_url, channel_id = fetch_and_aggregate_channel_data(text)
                         if error_message:
                             st.write(error_message)
 
@@ -666,49 +665,303 @@ def main():
                     except:
                         st.error("Oops! Looks like this account does't exist, or there is a network error.\
                                     Please cross-check your network connection and the username you entered!")
-                    
+
+                    # try extracting subscriber data   
+                    #try:
+                        # Retrieve subscriber data over time
+                        #with st.spinner('Visualizing more data...'):
+                            #subscriber_df = collect_subscriber_data_over_time(channel_id)
+                        #st.dataframe(subscriber_df)
+                        #subscriber_df['Year'] = pd.to_datetime(subscriber_df['date']).dt.year
+                        #subscriber_aggregated = subscriber_df.groupby('Year').agg({'subscribers': 'max'}).reset_index()
+
+                        # Plotting subscriber growth
+                        #fig_subscribers = px.line(
+                            #subscriber_aggregated,
+                            #x='Year',
+                            #y='subscribers',
+                            #title='Subscriber Growth Over the Past 5 Years',
+                            #markers=True,
+                            #line_shape='spline',
+                            #color_discrete_sequence=["#FFA07A"]
+                        #)
+
+                        #fig_subscribers.update_traces(
+                            #text=subscriber_aggregated['subscribers'].apply(format_number),
+                            #textposition='top right'
+                        #)
+
+                        #st.plotly_chart(fig_subscribers, use_container_width=True)
+
+                        # Insights for subscriber growth
+                        #max_subs_year = subscriber_aggregated.loc[subscriber_aggregated['subscribers'].idxmax(), 'Year']
+                        #max_subs = subscriber_aggregated['subscribers'].max()
+                        #st.markdown(
+                            #f"**Insight:** The year with the most subscriber growth was **{max_subs_year}** with a total of **{format_number(max_subs)} subscribers**! 🚀 "
+                            #"This growth could be due to viral content or collaborations that boosted your channel's visibility. "
+                            #"Consider looking back at your strategies during this year to replicate similar success."
+                        #)
+
+                    #except Exception as e:
+                        #st.error(f"An error occurred: {e}")
+
                     # try extracting the posts metadata
                     try:
                         with st.spinner('Visualizing more data...'):
                             df = fetch_videos_and_details(text) 
                         # Ensure 'Date' is a datetime object and extract the year
                         df['Date Posted'] = pd.to_datetime(df['Date Posted'])
+                        df['Hour'] = df['Date Posted'].dt.hour  # Correct the source of 'Hour'
                         df['Year'] = df['Date Posted'].dt.year
 
-                        # Filter the DataFrame to include only the past 5 years
-                        current_year = pd.to_datetime('today').year
-                        df_filtered = df[df['Year'] >= current_year - 5]
-
-                        # Aggregate likes, comments, and views by year
-                        aggregated_data = df_filtered.groupby('Year').agg({
-                            'Likes': 'sum',
-                            'Comments': 'sum',
+                        # Add Weekday to the DataFrame
+                        df['Weekday'] = df['Date Posted'].dt.day_name()
+                    
+                        # Aggregate by Weekday and Hour
+                        weekday_hourly_data = df.groupby(['Weekday', 'Hour']).agg({
                             'Views': 'sum'
                         }).reset_index()
-                    
-                        # Plotting the bar charts
-                        fig_likes = px.bar(aggregated_data, x='Year', y='Likes', title='Likes History Over the Past 5 Years',
-                                            color_discrete_sequence=["#636EFA"])
-                        fig_comments = px.bar(aggregated_data, x='Year', y='Comments', title='Comments History Over the Past 5 Years',
-                                                color_discrete_sequence=["#EF553B"])
-                        fig_views = px.bar(aggregated_data, x='Year', y='Views', title='Views History Over the Past 5 Years',
-                                            color_discrete_sequence=["#00CC96"])
 
-                        st.plotly_chart(fig_likes, use_container_width=True)
-                        st.plotly_chart(fig_comments, use_container_width=True)
-                        st.plotly_chart(fig_views, use_container_width=True)
-                
+                        # Ensure ordering of weekdays
+                        weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                        weekday_hourly_data['Weekday'] = pd.Categorical(weekday_hourly_data['Weekday'], categories=weekday_order, ordered=True)
+
+                        # Sort by weekday and hour
+                        weekday_hourly_data = weekday_hourly_data.sort_values(['Weekday', 'Hour'])
+
+                        st.write('') # just a way to create space
+
+                        # Plotting the Heatmap
+                        st.write("##### Views by Hour")
+                        # Pivot the DataFrame for the views heatmap
+                        heatmap_data_views = weekday_hourly_data.pivot(index='Weekday', columns='Hour', values='Views')
+
+                        # Fill missing values with zeros (optional, you can fill with NaN if preferred)
+                        heatmap_data_views = heatmap_data_views.fillna(0)
+
+                        # Plot the Views Heatmap
+                        fig_views_heatmap = px.imshow(
+                            heatmap_data_views,
+                            labels=dict(x='Hour of Day', y='Day of Week', color='Number of Views'),
+                            x=list(heatmap_data_views.columns),  # Use the columns from the pivot table
+                            y=weekday_order,
+                            title='Number of Views by Day and Hour',
+                            color_continuous_scale='Blues'  # Use shades of blue
+                        )
+
+                        # Update layout to ensure all hours and weekdays are shown
+                        fig_views_heatmap.update_layout(
+                            xaxis=dict(tickmode='linear', dtick=1),
+                            yaxis=dict(tickmode='array', tickvals=list(range(len(weekday_order))), ticktext=weekday_order),
+                            height=600,  # Make it taller
+                            width=1200   # Make it wider
+                        )
+
+                        st.plotly_chart(fig_views_heatmap, use_container_width=True, help="Hourly views reveal specific times of high viewer activity.")
+                        st.write("Leveraging this data helps in optimizing content release times.")
+
+                        # Highlight maximum views time
+                        max_views_time = weekday_hourly_data.loc[weekday_hourly_data['Views'].idxmax()]
+                        st.write(f"**Insight:** The highest number of views occurred on **{max_views_time['Weekday']}** at **{max_views_time['Hour']}h** with a total of **{format_number(max_views_time['Views'])}** views.")
+
                         #Setting up a Table for posts
                         # Renaming and selecting specific columns for the display as per requirements
                         df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
                         
                         # Setting the column names as needed
                         df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'URL']
-                        
+
+                        st.write('')
                         # Display the table as scrollable, adjusting height to show about 10 rows
-                        st.write("### Channel Posts")
+                        st.write("##### Trending Channel Posts")
                         st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
-                    
+
+                        # Filter the DataFrame to include only the past 5 years
+                        current_year = pd.to_datetime('today').year
+                        df_filtered = df[df['Year'] >= current_year - 5]
+
+                        st.write('')# just a way to create space
+                        # expander to show detailed analysis
+                        with st.expander("###### 👇 Here's a more Detailed Analysis📝 for you", expanded=False):
+                            # User selects a year for detailed view
+                            year_selected = st.selectbox("Select a year to drill down", options=sorted(df_filtered['Year'].unique(), reverse=True), key='youtube_year_selector')
+
+                            # Filter data for the selected year
+                            df_year = df_filtered[df_filtered['Year'] == year_selected]
+
+                            # Add month and week columns for further analysis
+                            df_year['Month'] = df_year['Date Posted'].dt.month
+                            df_year['Week'] = df_year['Date Posted'].dt.isocalendar().week
+
+                            # Monthly aggregation
+                            monthly_data = df_year.groupby('Month').agg({
+                                'Likes': 'sum',
+                                'Comments': 'sum',
+                                'Views': 'sum'
+                            }).reset_index()
+
+                            # Convert month numbers to names
+                            monthly_data['Month'] = monthly_data['Month'].apply(lambda x: calendar.month_name[x])
+
+                            # Weekly aggregation
+                            weekly_data = df_year.groupby('Week').agg({
+                                'Views': 'sum',
+                                'Likes': 'sum',
+                                'Comments': 'sum'
+                            }).reset_index()
+
+                            # Monthly visualizations
+                            fig_views_monthly = px.bar(monthly_data, x='Month', y='Views', title=f'Monthly Views for {year_selected}', 
+                                                    text='Views', color_discrete_sequence=["#636EFA"])
+                            fig_views_monthly.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Views")
+                            fig_views_monthly.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+
+                            fig_likes_monthly = px.bar(monthly_data, x='Month', y='Likes', title=f'Monthly Likes for {year_selected}', 
+                                                    text='Likes', color_discrete_sequence=["#EF553B"])
+                            fig_likes_monthly.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Likes")
+                            fig_likes_monthly.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+
+                            fig_comments_monthly = px.bar(monthly_data, x='Month', y='Comments', title=f'Monthly Comments for {year_selected}', 
+                                                        text='Comments', color_discrete_sequence=["#00CC96"])
+                            fig_comments_monthly.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Comments")
+                            fig_comments_monthly.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+
+                            # Weekly visualizations
+                            fig_views_weekly = px.bar(weekly_data, x='Week', y='Views', title=f'Weekly Views for {year_selected}', 
+                                                    text='Views', color_discrete_sequence=["#636EFA"])
+                            fig_views_weekly.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Views")
+                            fig_views_weekly.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+
+                            fig_likes_weekly = px.bar(weekly_data, x='Week', y='Likes', title=f'Weekly Likes for {year_selected}', 
+                                                    text='Likes', color_discrete_sequence=["#EF553B"])
+                            fig_likes_weekly.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Likes")
+                            fig_likes_weekly.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+
+                            fig_comments_weekly = px.bar(weekly_data, x='Week', y='Comments', title=f'Weekly Comments for {year_selected}', 
+                                                        text='Comments', color_discrete_sequence=["#00CC96"])
+                            fig_comments_weekly.update_layout(xaxis={'type': 'category'}, yaxis_title="Total Comments")
+                            fig_comments_weekly.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+
+                            st.write("")
+                            st.write(f"##### Detailed Analysis for {year_selected}")
+
+                            st.plotly_chart(fig_views_monthly, use_container_width=True, help="Monthly views represent the number of times videos were watched each month.")
+                            st.write("Observing monthly view trends can help identify peak content periods.")
+
+                            # Highlighting maximum view month
+                            max_views_month = monthly_data.loc[monthly_data['Views'].idxmax()]
+                            st.write(f"**Insight:** The highest number of views was in **{max_views_month['Month']}** with **{format_number(max_views_month['Views'])}** views.")
+
+                            st.plotly_chart(fig_likes_monthly, use_container_width=True, help="Monthly likes indicate viewer engagement and approval of content.")
+                            st.write("Track changes in likes to assess content reception over time.")
+
+                            # Highlighting maximum likes month
+                            max_likes_month = monthly_data.loc[monthly_data['Likes'].idxmax()]
+                            st.write(f"**Insight:** The highest number of likes was in **{max_likes_month['Month']}** with **{format_number(max_likes_month['Likes'])}** likes.")
+
+                            st.plotly_chart(fig_comments_monthly, use_container_width=True, help="Monthly comments reflect viewer interaction and interest.")
+                            st.write("Analyzing comment patterns can reveal viewer engagement and feedback trends.")
+
+                            # Highlighting maximum comments month
+                            max_comments_month = monthly_data.loc[monthly_data['Comments'].idxmax()]
+                            st.write(f"**Insight:** The highest number of comments was in **{max_comments_month['Month']}** with **{format_number(max_comments_month['Comments'])}** comments.")
+
+                            st.plotly_chart(fig_views_weekly, use_container_width=True, help="Weekly views help identify shorter-term trends and content performance.")
+                            st.write("Weekly trends can highlight periods of high engagement or virality.")
+
+                            # Highlighting maximum view week
+                            max_views_week = weekly_data.loc[weekly_data['Views'].idxmax()]
+                            st.write(f"**Insight:** The highest number of views in a week was **{format_number(max_views_week['Views'])}** during week **{max_views_week['Week']}**.")
+
+                            st.plotly_chart(fig_likes_weekly, use_container_width=True, help="Weekly likes provide insight into recent content approval.")
+                            st.write("Observing likes on a weekly basis can inform content strategy adjustments.")
+
+                            # Highlighting maximum likes week
+                            max_likes_week = weekly_data.loc[weekly_data['Likes'].idxmax()]
+                            st.write(f"**Insight:** The highest number of likes in a week was **{format_number(max_likes_week['Likes'])}** during week **{max_likes_week['Week']}**.")
+
+                            st.plotly_chart(fig_comments_weekly, use_container_width=True, help="Weekly comments offer insights into viewer interaction and discussion.")
+                            st.write("Comments can indicate viewer sentiment and topics of interest.")
+
+                            # Highlighting maximum comments week
+                            max_comments_week = weekly_data.loc[weekly_data['Comments'].idxmax()]
+                            st.write(f"**Insight:** The highest number of comments in a week was **{format_number(max_comments_week['Comments'])}** during week **{max_comments_week['Week']}**.")
+
+                        st.write('')# just a way to create space
+                        # using expander to show summary analysis
+                        with st.expander("###### 👇 Here's some Summary Analysis🧮 for you", expanded=False):
+                            # Aggregate likes, comments, and views by year
+                            aggregated_data = df_filtered.groupby('Year').agg({
+                                'Likes': 'sum',
+                                'Comments': 'sum',
+                                'Views': 'sum'
+                            }).reset_index()
+                        
+                            # Plotting the bar charts
+                            # Add a formatted column for text display
+                            aggregated_data['LikesFormatted'] = aggregated_data['Likes'].apply(format_number)
+                            aggregated_data['CommentsFormatted'] = aggregated_data['Comments'].apply(format_number)
+                            aggregated_data['ViewsFormatted'] = aggregated_data['Views'].apply(format_number)
+
+                            # Plotting the bar charts with formatted values displayed on each bar
+                            fig_likes = px.bar(
+                                aggregated_data,
+                                x='Year',
+                                y='Likes',
+                                title='Likes History Over the Past 5 Years',
+                                color_discrete_sequence=["#636EFA"],
+                                text='LikesFormatted'  # Use formatted text for the bars
+                            )
+
+                            fig_comments = px.bar(
+                                aggregated_data,
+                                x='Year',
+                                y='Comments',
+                                title='Comments History Over the Past 5 Years',
+                                color_discrete_sequence=["#EF553B"],
+                                text='CommentsFormatted'
+                            )
+
+                            fig_views = px.bar(
+                                aggregated_data,
+                                x='Year',
+                                y='Views',
+                                title='Views History Over the Past 5 Years',
+                                color_discrete_sequence=["#00CC96"],
+                                text='ViewsFormatted'
+                            )
+
+                            # Customize the text appearance
+                            fig_likes.update_traces(textposition='outside')  # Move the text outside the bars
+                            fig_comments.update_traces(textposition='outside')
+                            fig_views.update_traces(textposition='outside')
+
+                            # Display the visualizations with insights
+                            st.plotly_chart(fig_likes, use_container_width=True)
+                            max_likes_year = aggregated_data.loc[aggregated_data['Likes'].idxmax(), 'Year']
+                            max_likes = aggregated_data['Likes'].max()
+                            st.markdown(
+                                f"**Insight:** The year with the most likes was **{max_likes_year}** with a total of **{max_likes:,} likes**! 🎉 "
+                                "This was likely due to engaging content that resonated well with your audience. "
+                                "Keep up the great work by analyzing which types of posts were most successful that year."
+                            )
+
+                            st.plotly_chart(fig_comments, use_container_width=True)
+                            max_comments_year = aggregated_data.loc[aggregated_data['Comments'].idxmax(), 'Year']
+                            max_comments = aggregated_data['Comments'].max()
+                            st.markdown(
+                                f"**Insight:** The highest number of comments was in **{max_comments_year}** with **{max_comments:,} comments**. 💬 "
+                                "This indicates strong engagement from your followers. Consider reviewing the discussions from this period to identify themes or topics that sparked interest."
+                            )
+
+                            st.plotly_chart(fig_views, use_container_width=True)
+                            max_views_year = aggregated_data.loc[aggregated_data['Views'].idxmax(), 'Year']
+                            max_views = aggregated_data['Views'].max()
+                            st.markdown(
+                                f"**Insight:** The peak viewership was achieved in **{max_views_year}** with **{max_views:,} views**. 📈 "
+                                "This was likely due to high-quality or highly relevant content. Analyze the content from this year to find patterns you can replicate."
+                            )       
+
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
             
@@ -752,7 +1005,7 @@ def main():
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}") 
-############################################################# COMPETITORS' INSIGHT PAGE ###################################################################
+################################################################ COMPETITORS' INSIGHT PAGE ###################################################################
 
     if page_selection == "Competitors' Insight":
         # Header contents
@@ -1237,7 +1490,7 @@ def main():
                     with colX:
                         try:
                             with st.spinner('Visualizing the data...'):
-                                df, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text)
+                                df, error_message, profile_pic_url, channel_id = fetch_and_aggregate_channel_data(text)
                             if error_message:
                                 st.write(error_message)
 
@@ -1300,7 +1553,7 @@ def main():
                     with colY:
                         try:
                             with st.spinner('Visualizing the data...'):
-                                df2, error_message, profile_pic_url = fetch_and_aggregate_channel_data(text2)
+                                df2, error_message, profile_pic_url, channel_id = fetch_and_aggregate_channel_data(text2)
                             if error_message:
                                 st.write(error_message)
 
@@ -1512,7 +1765,7 @@ def main():
                                         st.write(f"No top tracks data available for {name}")
                         except Exception as e:
                             st.error(f"Oops! There was an error extracting data for {username}. Error: {e}")
-############################################################# SOLUTION OVERVIEW PAGE ###################################################################
+############################################################### SOLUTION OVERVIEW PAGE ###################################################################
     if page_selection == "Solution Overview":
         # Header contents
         st.image('resources/imgs/tima_logo.png',use_column_width=True,)
