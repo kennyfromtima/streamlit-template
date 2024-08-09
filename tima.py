@@ -1746,7 +1746,6 @@ def main():
                             )
 
                             st.plotly_chart(fig_views_heatmap, use_container_width=True, help="Hourly views reveal specific times of high viewer activity.")
-                            st.write("Leveraging this data helps in optimizing content release times.")
 
                             # Highlight maximum views time
                             max_views_time = weekday_hourly_data.loc[weekday_hourly_data['Views'].idxmax()]
@@ -1808,7 +1807,6 @@ def main():
                             )
 
                             st.plotly_chart(fig_views_heatmap2, use_container_width=True, help="Hourly views reveal specific times of high viewer activity.")
-                            st.write("Leveraging this data helps in optimizing content release times.")
 
                             # Highlight maximum views time
                             max_views_time2 = weekday_hourly_data2.loc[weekday_hourly_data2['Views'].idxmax()]
