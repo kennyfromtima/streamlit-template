@@ -667,43 +667,43 @@ def main():
                                     Please cross-check your network connection and the username you entered!")
 
                     # try extracting subscriber data   
-                    try:
+                    #try:
                         # Retrieve subscriber data over time
-                        with st.spinner('Visualizing more data...'):
-                            subscriber_df = collect_subscriber_data_over_time(channel_id)
+                        #with st.spinner('Visualizing more data...'):
+                            #subscriber_df = collect_subscriber_data_over_time(channel_id)
                         #st.dataframe(subscriber_df)
-                        subscriber_df['Year'] = pd.to_datetime(subscriber_df['date']).dt.year
-                        subscriber_aggregated = subscriber_df.groupby('Year').agg({'subscribers': 'max'}).reset_index()
+                        #subscriber_df['Year'] = pd.to_datetime(subscriber_df['date']).dt.year
+                        #subscriber_aggregated = subscriber_df.groupby('Year').agg({'subscribers': 'max'}).reset_index()
 
                         # Plotting subscriber growth
-                        fig_subscribers = px.line(
-                            subscriber_aggregated,
-                            x='Year',
-                            y='subscribers',
-                            title='Subscriber Growth Over the Past 5 Years',
-                            markers=True,
-                            line_shape='spline',
-                            color_discrete_sequence=["#FFA07A"]
-                        )
+                        #fig_subscribers = px.line(
+                            #subscriber_aggregated,
+                            #x='Year',
+                            #y='subscribers',
+                            #title='Subscriber Growth Over the Past 5 Years',
+                            #markers=True,
+                            #line_shape='spline',
+                            #color_discrete_sequence=["#FFA07A"]
+                        #)
 
-                        fig_subscribers.update_traces(
-                            text=subscriber_aggregated['subscribers'].apply(format_number),
-                            textposition='top right'
-                        )
+                        #fig_subscribers.update_traces(
+                            #text=subscriber_aggregated['subscribers'].apply(format_number),
+                            #textposition='top right'
+                        #)
 
-                        st.plotly_chart(fig_subscribers, use_container_width=True)
+                        #st.plotly_chart(fig_subscribers, use_container_width=True)
 
                         # Insights for subscriber growth
-                        max_subs_year = subscriber_aggregated.loc[subscriber_aggregated['subscribers'].idxmax(), 'Year']
-                        max_subs = subscriber_aggregated['subscribers'].max()
-                        st.markdown(
-                            f"**Insight:** The year with the most subscriber growth was **{max_subs_year}** with a total of **{format_number(max_subs)} subscribers**! 🚀 "
-                            "This growth could be due to viral content or collaborations that boosted your channel's visibility. "
-                            "Consider looking back at your strategies during this year to replicate similar success."
-                        )
+                        #max_subs_year = subscriber_aggregated.loc[subscriber_aggregated['subscribers'].idxmax(), 'Year']
+                        #max_subs = subscriber_aggregated['subscribers'].max()
+                        #st.markdown(
+                            #f"**Insight:** The year with the most subscriber growth was **{max_subs_year}** with a total of **{format_number(max_subs)} subscribers**! 🚀 "
+                            #"This growth could be due to viral content or collaborations that boosted your channel's visibility. "
+                            #"Consider looking back at your strategies during this year to replicate similar success."
+                        #)
 
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
+                    #except Exception as e:
+                        #st.error(f"An error occurred: {e}")
 
                     # try extracting the posts metadata
                     try:
@@ -1613,84 +1613,84 @@ def main():
                         except:
                             st.error("Oops! Looks like this account doesn't exist, or there is a network error. Please cross-check your network connection and the username you entered!")
 
-                    colQ, colZ = st.columns(2)
-                    with colQ:
-                        try:
+                    #colQ, colZ = st.columns(2)
+                    #with colQ:
+                        #try:
                             # Retrieve subscriber data over time
-                            with st.spinner('Visualizing more data...'):
-                                subscriber_df = collect_subscriber_data_over_time(channel_id)
+                            #with st.spinner('Visualizing more data...'):
+                                #subscriber_df = collect_subscriber_data_over_time(channel_id)
                             #st.dataframe(subscriber_df)
-                            subscriber_df['Year'] = pd.to_datetime(subscriber_df['date']).dt.year
-                            subscriber_aggregated = subscriber_df.groupby('Year').agg({'subscribers': 'max'}).reset_index()
+                            #subscriber_df['Year'] = pd.to_datetime(subscriber_df['date']).dt.year
+                            #subscriber_aggregated = subscriber_df.groupby('Year').agg({'subscribers': 'max'}).reset_index()
 
                             # Plotting subscriber growth
-                            fig_subscribers = px.line(
-                                subscriber_aggregated,
-                                x='Year',
-                                y='subscribers',
-                                title='Subscriber Growth Over the Past 5 Years',
-                                markers=True,
-                                line_shape='spline',
-                                color_discrete_sequence=["#FFA07A"]
-                            )
+                            #fig_subscribers = px.line(
+                                #subscriber_aggregated,
+                                #x='Year',
+                                #y='subscribers',
+                                #title='Subscriber Growth Over the Past 5 Years',
+                                #markers=True,
+                                #line_shape='spline',
+                                #color_discrete_sequence=["#FFA07A"]
+                            #)
 
-                            fig_subscribers.update_traces(
-                                text=subscriber_aggregated['subscribers'].apply(format_number),
-                                textposition='top right'
-                            )
+                            #fig_subscribers.update_traces(
+                                #text=subscriber_aggregated['subscribers'].apply(format_number),
+                                #textposition='top right'
+                            #)
 
-                            st.plotly_chart(fig_subscribers, use_container_width=True)
+                            #st.plotly_chart(fig_subscribers, use_container_width=True)
 
                             # Insights for subscriber growth
-                            max_subs_year = subscriber_aggregated.loc[subscriber_aggregated['subscribers'].idxmax(), 'Year']
-                            max_subs = subscriber_aggregated['subscribers'].max()
-                            st.markdown(
-                                f"**Insight:** The year with the most subscriber growth was **{max_subs_year}** with a total of **{format_number(max_subs)} subscribers**! 🚀 "
-                                "This growth could be due to viral content or collaborations that boosted your channel's visibility. "
-                                "Consider looking back at your strategies during this year to replicate similar success."
-                            )
+                            #max_subs_year = subscriber_aggregated.loc[subscriber_aggregated['subscribers'].idxmax(), 'Year']
+                            #max_subs = subscriber_aggregated['subscribers'].max()
+                            #st.markdown(
+                                #f"**Insight:** The year with the most subscriber growth was **{max_subs_year}** with a total of **{format_number(max_subs)} subscribers**! 🚀 "
+                                #"This growth could be due to viral content or collaborations that boosted your channel's visibility. "
+                                #"Consider looking back at your strategies during this year to replicate similar success."
+                            #)
                             
-                        except Exception as e:
-                            st.error(f"An error occurred: {e}")
+                        #except Exception as e:
+                            #st.error(f"An error occurred: {e}")
 
-                    with colZ:
-                        try:
+                    #with colZ:
+                        #try:
                             # Retrieve subscriber data over time
-                            with st.spinner('Visualizing more data...'):
-                                subscriber_df2 = collect_subscriber_data_over_time(channel_id2)
+                            #with st.spinner('Visualizing more data...'):
+                                #subscriber_df2 = collect_subscriber_data_over_time(channel_id2)
                             #st.dataframe(subscriber_df)
-                            subscriber_df2['Year'] = pd.to_datetime(subscriber_df2['date']).dt.year
-                            subscriber_aggregated2 = subscriber_df2.groupby('Year').agg({'subscribers': 'max'}).reset_index()
+                            #subscriber_df2['Year'] = pd.to_datetime(subscriber_df2['date']).dt.year
+                            #subscriber_aggregated2 = subscriber_df2.groupby('Year').agg({'subscribers': 'max'}).reset_index()
 
                             # Plotting subscriber growth
-                            fig_subscribers2 = px.line(
-                                subscriber_aggregated2,
-                                x='Year',
-                                y='subscribers',
-                                title='Subscriber Growth Over the Past 5 Years',
-                                markers=True,
-                                line_shape='spline',
-                                color_discrete_sequence=["#FFA07A"]
-                            )
+                            #fig_subscribers2 = px.line(
+                                #subscriber_aggregated2,
+                                #x='Year',
+                                #y='subscribers',
+                                #title='Subscriber Growth Over the Past 5 Years',
+                                #markers=True,
+                                #line_shape='spline',
+                                #color_discrete_sequence=["#FFA07A"]
+                            #)
 
-                            fig_subscribers2.update_traces(
-                                text=subscriber_aggregated2['subscribers'].apply(format_number),
-                                textposition='top right'
-                            )
+                            #fig_subscribers2.update_traces(
+                                #text=subscriber_aggregated2['subscribers'].apply(format_number),
+                                #textposition='top right'
+                            #)
 
-                            st.plotly_chart(fig_subscribers2, use_container_width=True)
+                            #st.plotly_chart(fig_subscribers2, use_container_width=True)
 
                             # Insights for subscriber growth
-                            max_subs_year2 = subscriber_aggregated2.loc[subscriber_aggregated2['subscribers'].idxmax(), 'Year']
-                            max_subs2 = subscriber_aggregated2['subscribers'].max()
-                            st.markdown(
-                                f"**Insight:** The year with the most subscriber growth was **{max_subs_year2}** with a total of **{format_number(max_subs2)} subscribers**! 🚀 "
-                                "This growth could be due to viral content or collaborations that boosted your channel's visibility. "
-                                "Consider looking back at your strategies during this year to replicate similar success."
-                            )
+                            #max_subs_year2 = subscriber_aggregated2.loc[subscriber_aggregated2['subscribers'].idxmax(), 'Year']
+                            #max_subs2 = subscriber_aggregated2['subscribers'].max()
+                            #st.markdown(
+                                #f"**Insight:** The year with the most subscriber growth was **{max_subs_year2}** with a total of **{format_number(max_subs2)} subscribers**! 🚀 "
+                                #"This growth could be due to viral content or collaborations that boosted your channel's visibility. "
+                                #"Consider looking back at your strategies during this year to replicate similar success."
+                            #)
                             
-                        except Exception as e:
-                            st.error(f"An error occurred: {e}")
+                        #except Exception as e:
+                            #st.error(f"An error occurred: {e}")
 
                     colR, colP = st.columns(2)
                     with colR:
