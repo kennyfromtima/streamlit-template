@@ -11,3 +11,4 @@ scikit_learn~=1.5.1
 streamlit~=1.31.1
 streamlit_option_menu~=0.3.13
 wordcloud~=1.9.3
+xgboost==2.1.1
