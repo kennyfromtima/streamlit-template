@@ -29,6 +29,9 @@ from streamlit_option_menu import option_menu
 import datetime
 import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
+import pickle
+import plotly.graph_objects as go
+from sklearn.preprocessing import StandardScaler
 import plotly.express as px
 from wordcloud import WordCloud
 from linkedin_api import Linkedin
@@ -45,7 +48,13 @@ from utils.channel_details import fetch_and_aggregate_channel_data
 from utils.channel_posts import fetch_videos_and_details
 from utils.artist_details import get_artist_data
 from utils.podcast_details import get_podcast_data
+from utils.preprocess_data import preprocess_data
 from utils.channel_details import collect_subscriber_data_over_time
+
+# Loading the Prediction Models
+model_load_path = "models/xgb_model.pkl"
+with open(model_load_path,'rb') as file:
+    xgb_model = pickle.load(file)
 ############################################################# APP CONFIGURATION PAGE ###################################################################
 # Set the page config
 st.set_page_config(page_title="TIMA Social Data Center", page_icon="📊")
@@ -604,185 +613,147 @@ def main():
                     # try extracting the channel metadata
                     try:
                         with st.spinner('Visualizing the data...'):
-                            df, error_message, profile_pic_url, channel_id = fetch_and_aggregate_channel_data(text)
+                            df1, error_message, profile_pic_url, channel_id = fetch_and_aggregate_channel_data(text)
                         if error_message:
                             st.write(error_message)
 
                         # Use the username in the output
                         st.write(f"Here is {text}'s profile metadata", unsafe_allow_html=True)
                         
-                        col1, col2, col3 = st.columns(3)
+                        tabs = st.radio("",('📝 Basics', '🕵️ Detailed Analysis', '🗃️ Summary Analysis', '🔭 Projections'), horizontal=True,)
 
-                        # Adjusted layout for profile metrics
-                        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
-                        
-                        with col1:
-                            st.image(profile_pic_url, caption='@'+text)
-                            st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
-                            st.markdown(f"<div class='font'><b>Username:</b> {df['Title'].iloc[0]}</div>", unsafe_allow_html=True)
-                            st.markdown(f"<div class='font'><b>About:</b> {df['Description'].iloc[0] if df['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
-                            st.markdown(f"<div class='font'><b>Country:</b> {df['Country'].iloc[0] if df['Country'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
-                            st.markdown(f"<div class='font'><b>Channel URL:</b> <a href='{df['Channel URL'].iloc[0]}' target='_blank'>{df['Channel URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+                        if tabs == '📝 Basics':
+                            st.markdown("---")
+                            col1, col2, col3 = st.columns(3)
 
-                        with col2:
-                            formatted_followers = format_number(df['Subscriber Count'].iloc[0])
-                            st.metric("Subscribers", formatted_followers)
+                            # Adjusted layout for profile metrics
+                            col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                             
+                            with col1:
+                                st.image(profile_pic_url, caption='@'+text)
+                                st.markdown("""<style>.font {font-size:14px;}</style>""", unsafe_allow_html=True)
+                                st.markdown(f"<div class='font'><b>Username:</b> {df1['Title'].iloc[0]}</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='font'><b>About:</b> {df1['Description'].iloc[0] if df1['Description'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='font'><b>Country:</b> {df1['Country'].iloc[0] if df1['Country'].iloc[0] else 'N/A'}</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='font'><b>Channel URL:</b> <a href='{df1['Channel URL'].iloc[0]}' target='_blank'>{df1['Channel URL'].iloc[0]}</a></div>", unsafe_allow_html=True)
+
+                            with col2:
+                                formatted_followers = format_number(df1['Subscriber Count'].iloc[0])
+                                st.metric("Subscribers", formatted_followers)
+                                
+                            
+                            with col3:
+                                formatted_posts = format_number(df1['Total Videos'].iloc[0])
+                                st.metric("Total Videos", formatted_posts)
+
+                            
+                            col5, col6, col7, col8, col_space, col9 = st.columns([4, 4, 4, 4, 1, 4])
+
+                            metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
+
+                            with col5:
+                                total_likes = "{:,}".format(df1['Total Likes'].iloc[0])
+                                avg_likes = "{:,}".format(df1['Average Likes per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
+
+                            with col6:
+                                engagement_rate = "{:.2f}".format(df1['Engagement Rate (%)'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate %</div><div class='submetrics'>{engagement_rate}</div>", unsafe_allow_html=True)
+                                estimated_reach = "{:,}".format(df1['Estimated Reach'].iloc[0])  
+                                st.markdown(metrics_style + f"<div class='metrics'>Est. Reach</div><div class='submetrics'>{estimated_reach}</div>", unsafe_allow_html=True)
+
+                            with col7:
+                                total_comments = "{:,}".format(df1['Total Comments'].iloc[0])
+                                avg_comments = "{:,}".format(df1['Average Comments per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
+
+                            with col8:
+                                total_views = "{:,}".format(df1['Total Views'].iloc[0])
+                                avg_views = "{:,}".format(df1['Average Views per Video'].iloc[0])
+                                st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
+
+                            # fetch channel post details
+                            with st.spinner('Visualizing more data...'):
+                                df = fetch_videos_and_details(text) 
+                            # Ensure 'Date' is a datetime object and extract the year
+                            df['Date Posted'] = pd.to_datetime(df['Date Posted'])
+                            df['Hour'] = df['Date Posted'].dt.hour  # Correct the source of 'Hour'
+                            df['Year'] = df['Date Posted'].dt.year
+
+                            # Add Weekday to the DataFrame
+                            df['Weekday'] = df['Date Posted'].dt.day_name()
                         
-                        with col3:
-                            formatted_posts = format_number(df['Total Videos'].iloc[0])
-                            st.metric("Total Videos", formatted_posts)
+                            # Aggregate by Weekday and Hour
+                            weekday_hourly_data = df.groupby(['Weekday', 'Hour']).agg({
+                                'Views': 'sum'
+                            }).reset_index()
 
-                        
-                        col5, col6, col7, col8, col_space, col9 = st.columns([4, 4, 4, 4, 1, 4])
+                            # Ensure ordering of weekdays
+                            weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                            weekday_hourly_data['Weekday'] = pd.Categorical(weekday_hourly_data['Weekday'], categories=weekday_order, ordered=True)
 
-                        metrics_style = "<style>.metrics {font-size:18px; font-weight:bold; color:white;} .submetrics {font-size:17px; color:grey;}</style>"
+                            # Sort by weekday and hour
+                            weekday_hourly_data = weekday_hourly_data.sort_values(['Weekday', 'Hour'])
 
-                        with col5:
-                            total_likes = "{:,}".format(df['Total Likes'].iloc[0])
-                            avg_likes = "{:,}".format(df['Average Likes per Video'].iloc[0])
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Likes</div><div class='submetrics'>{total_likes}<br>Average: {avg_likes}</div>", unsafe_allow_html=True)
+                            st.write('') # just a way to create space
 
-                        with col6:
-                            engagement_rate = "{:.2f}".format(df['Engagement Rate (%)'].iloc[0])
-                            st.markdown(metrics_style + f"<div class='metrics'>Engagement Rate %</div><div class='submetrics'>{engagement_rate}</div>", unsafe_allow_html=True)
-                            estimated_reach = "{:,}".format(df['Estimated Reach'].iloc[0])  
-                            st.markdown(metrics_style + f"<div class='metrics'>Est. Reach</div><div class='submetrics'>{estimated_reach}</div>", unsafe_allow_html=True)
+                            # Plotting the Heatmap
+                            st.write("##### Views by Hour")
+                            # Pivot the DataFrame for the views heatmap
+                            heatmap_data_views = weekday_hourly_data.pivot(index='Weekday', columns='Hour', values='Views')
 
-                        with col7:
-                            total_comments = "{:,}".format(df['Total Comments'].iloc[0])
-                            avg_comments = "{:,}".format(df['Average Comments per Video'].iloc[0])
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Comments</div><div class='submetrics'>{total_comments}<br>Average: {avg_comments}</div>", unsafe_allow_html=True)
+                            # Fill missing values with zeros (optional, you can fill with NaN if preferred)
+                            heatmap_data_views = heatmap_data_views.fillna(0)
 
-                        with col8:
-                            total_views = "{:,}".format(df['Total Views'].iloc[0])
-                            avg_views = "{:,}".format(df['Average Views per Video'].iloc[0])
-                            st.markdown(metrics_style + f"<div class='metrics'>Number of Views</div><div class='submetrics'>{total_views}<br>Average: {avg_views}</div>", unsafe_allow_html=True)
+                            # Plot the Views Heatmap
+                            fig_views_heatmap = px.imshow(
+                                heatmap_data_views,
+                                labels=dict(x='Hour of Day', y='Day of Week', color='Number of Views'),
+                                x=list(heatmap_data_views.columns),  # Use the columns from the pivot table
+                                y=weekday_order,
+                                title='Number of Views by Day and Hour',
+                                color_continuous_scale='Blues'  # Use shades of blue
+                            )
 
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
-                    
-                    except:
-                        st.error("Oops! Looks like this account does't exist, or there is a network error.\
-                                    Please cross-check your network connection and the username you entered!")
+                            # Update layout to ensure all hours and weekdays are shown
+                            fig_views_heatmap.update_layout(
+                                xaxis=dict(tickmode='linear', dtick=1),
+                                yaxis=dict(tickmode='array', tickvals=list(range(len(weekday_order))), ticktext=weekday_order),
+                                height=600,  # Make it taller
+                                width=1200   # Make it wider
+                            )
 
-                    # try extracting subscriber data   
-                    #try:
-                        # Retrieve subscriber data over time
-                        #with st.spinner('Visualizing more data...'):
-                            #subscriber_df = collect_subscriber_data_over_time(channel_id)
-                        #st.dataframe(subscriber_df)
-                        #subscriber_df['Year'] = pd.to_datetime(subscriber_df['date']).dt.year
-                        #subscriber_aggregated = subscriber_df.groupby('Year').agg({'subscribers': 'max'}).reset_index()
+                            st.plotly_chart(fig_views_heatmap, use_container_width=True, help="Hourly views reveal specific times of high viewer activity.")
+                            st.write("Leveraging this data helps in optimizing content release times.")
 
-                        # Plotting subscriber growth
-                        #fig_subscribers = px.line(
-                            #subscriber_aggregated,
-                            #x='Year',
-                            #y='subscribers',
-                            #title='Subscriber Growth Over the Past 5 Years',
-                            #markers=True,
-                            #line_shape='spline',
-                            #color_discrete_sequence=["#FFA07A"]
-                        #)
+                            # Highlight maximum views time
+                            max_views_time = weekday_hourly_data.loc[weekday_hourly_data['Views'].idxmax()]
+                            st.write(f"**Insight:** The highest number of views occurred on **{max_views_time['Weekday']}** at **{max_views_time['Hour']}h** with a total of **{format_number(max_views_time['Views'])}** views.")
 
-                        #fig_subscribers.update_traces(
-                            #text=subscriber_aggregated['subscribers'].apply(format_number),
-                            #textposition='top right'
-                        #)
+                            #Setting up a Table for posts
+                            # Renaming and selecting specific columns for the display as per requirements
+                            df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
+                            
+                            # Setting the column names as needed
+                            df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'URL']
 
-                        #st.plotly_chart(fig_subscribers, use_container_width=True)
+                            st.write('')
+                            # Display the table as scrollable, adjusting height to show about 10 rows
+                            st.write("##### Trending Channel Posts")
+                            st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
 
-                        # Insights for subscriber growth
-                        #max_subs_year = subscriber_aggregated.loc[subscriber_aggregated['subscribers'].idxmax(), 'Year']
-                        #max_subs = subscriber_aggregated['subscribers'].max()
-                        #st.markdown(
-                            #f"**Insight:** The year with the most subscriber growth was **{max_subs_year}** with a total of **{format_number(max_subs)} subscribers**! 🚀 "
-                            #"This growth could be due to viral content or collaborations that boosted your channel's visibility. "
-                            #"Consider looking back at your strategies during this year to replicate similar success."
-                        #)
-
-                    #except Exception as e:
-                        #st.error(f"An error occurred: {e}")
-
-                    # try extracting the posts metadata
-                    try:
-                        with st.spinner('Visualizing more data...'):
+                        if tabs == '🕵️ Detailed Analysis':
+                            st.markdown("---")
                             df = fetch_videos_and_details(text) 
-                        # Ensure 'Date' is a datetime object and extract the year
-                        df['Date Posted'] = pd.to_datetime(df['Date Posted'])
-                        df['Hour'] = df['Date Posted'].dt.hour  # Correct the source of 'Hour'
-                        df['Year'] = df['Date Posted'].dt.year
+                            # Ensure 'Date' is a datetime object and extract the year
+                            df['Date Posted'] = pd.to_datetime(df['Date Posted'])
+                            df['Hour'] = df['Date Posted'].dt.hour  # Correct the source of 'Hour'
+                            df['Year'] = df['Date Posted'].dt.year
 
-                        # Add Weekday to the DataFrame
-                        df['Weekday'] = df['Date Posted'].dt.day_name()
-                    
-                        # Aggregate by Weekday and Hour
-                        weekday_hourly_data = df.groupby(['Weekday', 'Hour']).agg({
-                            'Views': 'sum'
-                        }).reset_index()
+                            # Filter the DataFrame to include only the past 5 years
+                            current_year = pd.to_datetime('today').year
+                            df_filtered = df[df['Year'] >= current_year - 5]
 
-                        # Ensure ordering of weekdays
-                        weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                        weekday_hourly_data['Weekday'] = pd.Categorical(weekday_hourly_data['Weekday'], categories=weekday_order, ordered=True)
-
-                        # Sort by weekday and hour
-                        weekday_hourly_data = weekday_hourly_data.sort_values(['Weekday', 'Hour'])
-
-                        st.write('') # just a way to create space
-
-                        # Plotting the Heatmap
-                        st.write("##### Views by Hour")
-                        # Pivot the DataFrame for the views heatmap
-                        heatmap_data_views = weekday_hourly_data.pivot(index='Weekday', columns='Hour', values='Views')
-
-                        # Fill missing values with zeros (optional, you can fill with NaN if preferred)
-                        heatmap_data_views = heatmap_data_views.fillna(0)
-
-                        # Plot the Views Heatmap
-                        fig_views_heatmap = px.imshow(
-                            heatmap_data_views,
-                            labels=dict(x='Hour of Day', y='Day of Week', color='Number of Views'),
-                            x=list(heatmap_data_views.columns),  # Use the columns from the pivot table
-                            y=weekday_order,
-                            title='Number of Views by Day and Hour',
-                            color_continuous_scale='Blues'  # Use shades of blue
-                        )
-
-                        # Update layout to ensure all hours and weekdays are shown
-                        fig_views_heatmap.update_layout(
-                            xaxis=dict(tickmode='linear', dtick=1),
-                            yaxis=dict(tickmode='array', tickvals=list(range(len(weekday_order))), ticktext=weekday_order),
-                            height=600,  # Make it taller
-                            width=1200   # Make it wider
-                        )
-
-                        st.plotly_chart(fig_views_heatmap, use_container_width=True, help="Hourly views reveal specific times of high viewer activity.")
-                        st.write("Leveraging this data helps in optimizing content release times.")
-
-                        # Highlight maximum views time
-                        max_views_time = weekday_hourly_data.loc[weekday_hourly_data['Views'].idxmax()]
-                        st.write(f"**Insight:** The highest number of views occurred on **{max_views_time['Weekday']}** at **{max_views_time['Hour']}h** with a total of **{format_number(max_views_time['Views'])}** views.")
-
-                        #Setting up a Table for posts
-                        # Renaming and selecting specific columns for the display as per requirements
-                        df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
-                        
-                        # Setting the column names as needed
-                        df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'URL']
-
-                        st.write('')
-                        # Display the table as scrollable, adjusting height to show about 10 rows
-                        st.write("##### Trending Channel Posts")
-                        st.dataframe(df_display, height=400)  # Adjust the height as needed to fit 10 rows visibly
-
-                        # Filter the DataFrame to include only the past 5 years
-                        current_year = pd.to_datetime('today').year
-                        df_filtered = df[df['Year'] >= current_year - 5]
-
-                        st.write('')# just a way to create space
-                        # expander to show detailed analysis
-                        with st.expander("###### 👇 Here's a more Detailed Analysis📝 for you", expanded=False):
                             # User selects a year for detailed view
                             year_selected = st.selectbox("Select a year to drill down", options=sorted(df_filtered['Year'].unique(), reverse=True), key='youtube_year_selector')
 
@@ -887,9 +858,18 @@ def main():
                             max_comments_week = weekly_data.loc[weekly_data['Comments'].idxmax()]
                             st.write(f"**Insight:** The highest number of comments in a week was **{format_number(max_comments_week['Comments'])}** during week **{max_comments_week['Week']}**.")
 
-                        st.write('')# just a way to create space
-                        # using expander to show summary analysis
-                        with st.expander("###### 👇 Here's some Summary Analysis🧮 for you", expanded=False):
+                        if tabs == '🗃️ Summary Analysis':
+                            st.markdown("---")
+                            df = fetch_videos_and_details(text)
+                            # Ensure 'Date' is a datetime object and extract the year
+                            df['Date Posted'] = pd.to_datetime(df['Date Posted'])
+                            df['Hour'] = df['Date Posted'].dt.hour  # Correct the source of 'Hour'
+                            df['Year'] = df['Date Posted'].dt.year
+
+                            # Filter the DataFrame to include only the past 5 years
+                            current_year = pd.to_datetime('today').year
+                            df_filtered = df[df['Year'] >= current_year - 5]
+
                             # Aggregate likes, comments, and views by year
                             aggregated_data = df_filtered.groupby('Year').agg({
                                 'Likes': 'sum',
@@ -960,10 +940,92 @@ def main():
                             st.markdown(
                                 f"**Insight:** The peak viewership was achieved in **{max_views_year}** with **{max_views:,} views**. 📈 "
                                 "This was likely due to high-quality or highly relevant content. Analyze the content from this year to find patterns you can replicate."
-                            )       
+                            )   
+
+                        if tabs == '🔭 Projections':
+                            st.markdown("---")
+                            df = fetch_videos_and_details(text)
+                            total_views = df1['Total Views'].iloc[0]
+                            # preprocess the data before predictions
+                            model_data, df_monthly = preprocess_data(df)
+
+                            # Predict the next 6 months
+                            predictions = []
+                            current_input = model_data[-1].reshape(1, -1)  # Start with the last available data point
+                            
+                            for _ in range(6):
+                                pred = xgb_model.predict(current_input)
+                                predictions.append(pred[0])
+                                
+                                # Update the input with the new prediction
+                                current_input = np.roll(current_input, -1)
+                                current_input[0, -1] = pred
+                            
+                            # Create a date range for the next 6 months
+                            last_date = df_monthly.index[-1]
+                            future_dates = pd.date_range(last_date + pd.DateOffset(months=1), periods=6, freq='ME')
+
+                            # Format the dates to only show year, month, and day
+                            future_dates = future_dates.strftime('%Y-%m-%d')
+
+                            # Round predictions to whole numbers
+                            predictions = np.round(predictions).astype(int)
+
+                            # Calculate Predicted Total Views
+                            predicted_total_views = []
+                            cumulative_views = total_views
+                            for pred in predictions:
+                                cumulative_views += pred
+                                predicted_total_views.append(cumulative_views)
+
+                            # Create a DataFrame to display the results
+                            results_df = pd.DataFrame({
+                                'Date': future_dates,
+                                'Predicted Monthly Views': predictions,
+                                'Predicted Total Views': predicted_total_views
+                            })
+
+                            # Create the line chart with Plotly Graph Objects
+                            fig = go.Figure()
+                            
+                            # Add the shaded area
+                            fig.add_trace(go.Scatter(
+                                x=results_df['Date'], y=results_df['Predicted Monthly Views'],
+                                mode='lines',
+                                line=dict(color='red'),
+                                fill='tozeroy',  # Shaded area
+                                name='Predicted Views'
+                            ))
+                            
+                            # Add the dots overlaying the line
+                            fig.add_trace(go.Scatter(
+                                x=results_df['Date'], y=results_df['Predicted Monthly Views'],
+                                mode='markers',
+                                marker=dict(color='white', size=10),
+                                name=''
+                            ))
+                            
+                            # Update the layout for better visualization
+                            fig.update_layout(
+                                title='Predicted Views for the Next 6 Months',
+                                xaxis_title='Date',
+                                yaxis_title='Predicted Monthly Views',
+                                showlegend=True
+                            )
+                            
+                            # Display the plot in Streamlit
+                            st.plotly_chart(fig)
+                            
+                            # Display the result
+                            st.write('Predicted Views for the Next 6 Months')
+                            st.dataframe(results_df)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
+                    
+                    except:
+                        st.error("Oops! Looks like this account does't exist, or there is a network error.\
+                                    Please cross-check your network connection and the username you entered!")
             
             # building out the custom-made selection
             if viz == '🛠️ Get `custom-made` visuals':
