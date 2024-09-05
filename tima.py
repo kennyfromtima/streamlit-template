@@ -30,8 +30,9 @@ import datetime
 import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import pickle
+import joblib
 import plotly.graph_objects as go
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 import plotly.express as px
 from wordcloud import WordCloud
 from linkedin_api import Linkedin
@@ -49,12 +50,17 @@ from utils.channel_posts import fetch_videos_and_details
 from utils.artist_details import get_artist_data
 from utils.podcast_details import get_podcast_data
 from utils.preprocess_data import preprocess_data
+from utils.preprocess_input_data import preprocess_df
 from utils.channel_details import collect_subscriber_data_over_time
 
 # Loading the Prediction Models
 model_load_path = "models/xgb_model.pkl"
 with open(model_load_path,'rb') as file:
     xgb_model = pickle.load(file)
+
+model_load_path = "models/xgb_model2.pkl"
+with open(model_load_path,'rb') as file:
+    xgb_model2 = pickle.load(file)
 ############################################################# APP CONFIGURATION PAGE ###################################################################
 # Set the page config
 st.set_page_config(page_title="TIMA Social Data Center", page_icon="📊")
@@ -732,10 +738,10 @@ def main():
 
                             #Setting up a Table for posts
                             # Renaming and selecting specific columns for the display as per requirements
-                            df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'URL']]
+                            df_display = df[['Title', 'Date Posted', 'Description', 'Views', 'Likes', 'Comments', 'Hashtags', 'Engagement Rate', 'URL']]
                             
                             # Setting the column names as needed
-                            df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'URL']
+                            df_display.columns = ['Title', 'Date', 'Description', 'Views', 'Likes', 'Comments', 'Hashtags', 'Engagement Rate', 'URL']
 
                             st.write('')
                             # Display the table as scrollable, adjusting height to show about 10 rows
@@ -945,6 +951,13 @@ def main():
                         if tabs == '🔭 Projections':
                             st.markdown("---")
                             df = fetch_videos_and_details(text)
+
+                            # get the mean likes, comments, engagement rate
+                            mean_like = df['Likes'].mean()
+                            mean_comment = df['Comments'].mean()
+                            mean_engagement = df['Engagement Rate'].mean()
+
+                            # get the channel's total views
                             total_views = df1['Total Views'].iloc[0]
                             # preprocess the data before predictions
                             model_data, df_monthly = preprocess_data(df)
@@ -1017,8 +1030,45 @@ def main():
                             st.plotly_chart(fig)
                             
                             # Display the result
-                            st.write('Predicted Views for the Next 6 Months')
+                            st.write('**Predicted Views for the Next 6 Months**')
                             st.dataframe(results_df)
+
+                            pred1, pred2 = st.columns([1.9,1])
+                            with pred1:
+                                st.write('**Views Predictor**')
+                                with st.form("Views Predictor"):
+                                    video_duration = st.number_input("Video Duration (in seconds)", min_value=1)
+                                    hour_of_day = st.number_input("What hour of the day will the Video be posted?", min_value=0, max_value=23)
+                                    weekday = st.selectbox("What day of the week will the Video be posted?", options=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+                                    
+                                    submit_button = st.form_submit_button("Predict")
+
+                                # If form is submitted
+                                if submit_button:
+                                    # Add the input data as a new row
+                                    new_data = {
+                                        'Title': [None],
+                                        'Views': [None],  # Placeholder for prediction
+                                        'Likes': [mean_like],
+                                        'Comments': [mean_comment],
+                                        'Engagement Rate': [mean_engagement],
+                                        'Video Duration in Seconds': [video_duration],
+                                        'Hour of Day': [hour_of_day],
+                                        'YouTube Short': [None],
+                                        'Weekday': [weekday]
+                                    }
+                                    
+                                    # Preprocess the dataset
+                                    preprocessed_data = preprocess_df(df, new_data)
+
+                                    # Extract features for prediction
+                                    X = preprocessed_data.drop(columns=['Views'])
+
+                                    # Make prediction on the entire dataset
+                                    predictions = xgb_model2.predict(X)
+
+                                    # Display the predicted Views for the last row
+                                    st.write(f"This Video is expected to get **{int(predictions[-1])}** Views 📽️ in the first **6 Months!**")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")

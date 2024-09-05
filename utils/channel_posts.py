@@ -9,10 +9,20 @@
 import streamlit as st
 from googleapiclient.discovery import build
 import pandas as pd
+import re
 
 # API key (replace with yours)
 api_key = 'AIzaSyBGf2wn9gHL6TyOTc7sUyABsWHLkDpqPHM'
 youtube = build('youtube', 'v3', developerKey=api_key)
+
+@st.cache_data(ttl=10800, show_spinner=False)
+def parse_iso_duration(duration):
+    pattern = re.compile(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?')
+    match = pattern.match(duration)
+    if match:
+        hours, minutes, seconds = match.groups()
+        return int(seconds or 0) + 60 * (int(minutes or 0) + 60 * int(hours or 0))
+    return 0
 
 @st.cache_data(ttl=10800, show_spinner=False)
 def search_channel_by_name(channel_name):
@@ -74,13 +84,14 @@ def fetch_videos_and_details(username, max_videos=1000):
     for i in range(0, len(video_ids), 50):
         batch_ids = video_ids[i:i+50]
         video_response = youtube.videos().list(
-            part='snippet,statistics',
+            part='snippet,statistics,contentDetails',
             id=','.join(batch_ids)
         ).execute()
         
         for item in video_response['items']:
             stats = item['statistics']
             snippet = item['snippet']
+            content_details = item['contentDetails']
             video_id = item['id']
             video_url = f"https://www.youtube.com/watch?v={video_id}"
             view_count = int(stats.get('viewCount', 0))
@@ -89,6 +100,14 @@ def fetch_videos_and_details(username, max_videos=1000):
             description = snippet.get('description', '')
             hashtags = [word for word in description.split() if word.startswith('#')]
             engagement_rate = ((like_count + comment_count) / view_count) * 100 if view_count > 0 else 0
+
+            # Extract additional details
+            video_duration = content_details.get('duration', 'PT0S')
+            video_duration_seconds = parse_iso_duration(video_duration)
+            publish_date = pd.to_datetime(snippet['publishedAt'])
+            hour_of_day = publish_date.hour
+            weekday = publish_date.day_name()
+            is_youtube_short = 'Yes' if 'shorts' in video_url else 'No'
             
             videos_data.append({
                 'Title': snippet['title'],
@@ -99,7 +118,11 @@ def fetch_videos_and_details(username, max_videos=1000):
                 'Description': description,
                 'Hashtags': ', '.join(hashtags),
                 'Engagement Rate': round(engagement_rate,2),
-                'URL': video_url
+                'URL': video_url,
+                'Video Duration in Seconds': video_duration_seconds,
+                'Hour of Day': hour_of_day,
+                'YouTube Short': is_youtube_short,
+                'Weekday': weekday
             })
             
     # Convert list of dicts to DataFrame
